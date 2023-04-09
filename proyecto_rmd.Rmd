@@ -19,20 +19,26 @@ library(glue)
 library(PerformanceAnalytics)
 library(dataxray)
 library(correlationfunnel)
+library(caret)
+library(ROCR)
 ```
 
 ```{r, cargando Rdata}
 load("~/Maestria/1er semestre/Modelos lineales/proyecto/DatosParaProyecto.RData")
 ```
 
-#### Descripción de la base
+### Objetivo y alcances del proyecto
+
+
+### Descripción de la base
 
 ```{r}
-View(Train)
-names(Train)
+# View(Train)
+# names(Train)
 
 Train_copy = Train
-nrow(Train_copy)
+Test_copy = Test
+# nrow(Train_copy)
 ```
 
 
@@ -73,7 +79,37 @@ nominal - 3
 ordinal - 1
 continua - 8
 
-------- Análisis univariado variables nominales y ordinales ---------
+
+Sobre la variable dependiente y de acuerdo con la siguiente pagina web:
+
+**A charge-off is the opposite of paid in full. It means the lender hasn't received payment for at least 180 days, and the account is in default. The lender, or a third-party collection agency, can still come after this kind of debt. Charge-offs have an extremely negative effect on your credit score.**
+
+Fuente: https://budgeting.thenest.com/account-paid-full-vs-chargeoff-23884.html
+
+### Análisis exploratorio
+
+#### Análisis univariado
+
+Inicialmente pasamos a binario el pago (Fully Paid) o el default (Charged Off) con un 1 y un 0 respectivamente.
+
+```{r}
+Train_copy$Loan.Status = ifelse(Train_copy$Loan.Status  == "Fully Paid", 1, 0)
+Train_copy$Loan.Status = as.factor(Train_copy$Loan.Status)
+```
+
+Loan.Status
+```{r}
+ggplot(Train_copy, aes(fct_infreq(Loan.Status)))+
+  geom_bar(stat="count")+
+  labs(title = "Variable 'Loan.Status'",
+       x = "Plazo",
+       y = "Frecuencia") +
+  theme_bw() +
+  # Agregar el número de observaciones al filo de cada barra
+  geom_text(stat = "count", aes(label = after_stat(format(count, big.mark = ","))), vjust = -0.5)
+```
+
+#####  Análisis univariado variables nominales y ordinales
 
 Paso numero 1, pasar a factores todas estas variables nominales y ordinales
 
@@ -151,7 +187,7 @@ ggplot(Train_copy, aes(fct_infreq(Purpose)))+
 
 
 
-------- Análisis univariado y agrupación grafica de variables continuas ---------
+#####   Análisis univariado y agrupación grafica de variables continuas
 
 Dado que son varias variables continuas y probablemente no tenga sentido meter todas en un solo gráfico de boxplot, buscamos rangos similares para segmentar en 2 o 3 grupos. Esto requiere inicialmente meter todas en un boxplot y manualmente separarlas
 
@@ -218,6 +254,7 @@ ggplot(train_long_form1, aes(y=variable, x=valor))+
   scale_y_discrete(NULL)+
   theme_bw()
 ```
+
 Visualizamos los cuartiles
 
 
@@ -395,6 +432,10 @@ ggplot(train_long_form5, aes(y=variable, x=valor))+
 # mean(Train_copy_continuas$Credit.Score)
 ```
 
+
+
+
+
 Un análisis mediante un histógrama nos indica que se presenta un subgrupo de valores extremos mayores a 2mil en la variable `Credit.Score`
 ```{r}
 ggplot(train_long_form5, aes(valor))+
@@ -558,53 +599,488 @@ print(glue("Se redujo el dataset en un {(1 - (nrow(Train_copy_1)/nrow(Train_copy
 
 
 
------------------- ANALISIS BIVARIADO --------------------------
+------------------ ANALISIS BIVARIADO--------------------------
 ```{r}
 describe(Train_copy_1)
 ```
 
-#### Análisis exploratorio
-
-- Matriz de correlaciones
+#### Matriz de correlaciones e inferencia sobre ella
 
 ```{r}
 
 Train_copy_1_continues = Train_copy_1 %>% select(Current.Loan.Amount, Credit.Score, Annual.Income, Monthly.Debt, Years.of.Credit.History, Months.since.last.delinquent, Number.of.Open.Accounts, Current.Credit.Balance, Maximum.Open.Credit, Bankruptcies, Tax.Liens)
 
-chart.Correlation(Train_copy_1_continues, histogram=TRUE, pch=19, main = "Matriz de correlaciones con histógrama")
+chart.Correlation(select(Train_copy_1_continues, -c(Tax.Liens)), histogram=TRUE, pch=19, main = "Matriz de correlaciones con histógrama")
 ```
+Con el análisis de la matriz de correlación podríamos plantearnos las siguientes interacciones:
+
+- Current.Credit.Balance & Maximum.Open.Credit
+- Annual.Income & Monthly.Debt
+
+
+
 xray and Funnel chart
 ```{r}
 
-Train_copy_1 %>%  
-  make_xray() %>% 
-  view_xray()
+# Train_copy_1 %>%  
+#   make_xray() %>% 
+#   view_xray()
 
 ```
 
 ```{r}
-Train_copy_1 %>%  binarize()  %>%  
-  glimpse() %>% 
-  correlate(target = Loan.Status__Charged_Off ) %>% 
-  plot_correlation_funnel()
+# Train_copy_1 %>%  binarize()  %>%
+#   glimpse() %>%
+#   correlate(target = Loan.Status__1 ) %>%
+#   plot_correlation_funnel()
 
 ```
 ```{r}
-Train_copy_1 %>%  binarize()  %>%  
-  glimpse() %>% 
-  correlate(target = Loan.Status__Fully_Paid ) %>% 
-  plot_correlation_funnel()
+# Train_copy_1 %>%  binarize()  %>%  
+#   glimpse() %>% 
+#   correlate(target = Loan.Status__0 ) %>% 
+#   plot_correlation_funnel()
 ```
 
+
+#### Análisis bivariado
 
 - Exploratorio bivariado (shiny app)
 
 ```{r}
 
-explore(Train_copy_1)
+# explore(Train_copy_1)
 
-Train %>% describe_cat(Current.Loan.Amount)
+# Train %>% describe_cat(Current.Loan.Amount)
+```
+A resaltar que:
+
+
+
+
+
+EN EL PERIODO DEL CREDITO
+- Son más los clientes que solicitan un crédito a corto plazo (70%) que los que solicitan a LP (30%)
+- Aquellos clientes con default son el grupo predominante en el gpo de clientes que solicitaron un  crédito a largo plazo
+- La mediana del current loan es más alta para clientes con creditos CP que a LP, corroborar la media porque se notan outliers altos en CP.
+- Son más los clientes con una hipóteca que piden crédito a LP que a CP, que los clientes que rentan su vivienda con créditos a CP que a LP. (variacion > 10%)
+- La media de la deuda actual del cliente es mayor para los clientes que solicitan un crédito a LP, que uno a CP, lo cual tiene logica de negocio.
+- La media del credit score es mayor para los clientes que solicitan crédito a CP que a LP.
+
+
+EN LOS AÑOS DE TRABAJO DEL CLIENTE:
+- El grupo que predomina es el de > 10 años de trabajo con un 35%, seguido de 2 años con un 8.5% 
+
+
+EN EL DUEÑO DE LA VIVIENDA:
+- Destaca el grupo de clientes con hipóteca con un 51%, seguido de Renta con un 39% y solo casa propia con un 9%
+- Hay dos factores que se podrían unificar: have mortgage & home mortgage, aunque la prop del primeor es de 0.2% por lo que no vale la pena
+
+EN EL PROPOSITO DEL CRÉDITO:
+- Destaca con un 73% el proposito de consolidación de la deuda como proposito declarado. 
+
+EN LAS BANCARROTAS:
+- El 65% de los clientes declara nunca haber caído en bancarrota, le sigue el 25% con al menos una bancarrota.
+- El grupo, por proposito del crédito, que predomina en una bancarrota declarada es aquel grupo que declara solicitar el crédito para "moving"
+
+EN LA DEUDA ACTUAL DEL CLIENTE:
+- La mediana de la deuda tiene una relación negativa con el aumento en el credit scoring, a mayor credit score menor es la mediana (falta corroborar la media dado outliers en altos credit scores)
+- la mediana sigue una relacion positiva con el ingreso anual (corroborar media)
+- la mediana sigue una relacion positiva con la deuda mensual (corroborar media)
+- la mediana sigue una relacion positiva con el balance crediticio (corroborar media)
+
+EN LOS AÑOS DE HISTORIAL CREDITICIO:
+
+- La mediana de los años mantiene una relacion positiva con el balance crediticio
+
+EN EL BALANCE ACTUAL DEL CREDITO:
+- La mediana del balance mantiene una relacion positiva con el maximo de creditos abiertos.
+
+EN EL NUMERO DE BANCARROTAS:
+
+- La mediana del numero máximo de creditos abiertos se relaciona negativamente con el número de bancarrotas. Entre más bancarrotas es menor el numero de créditos abiertos.
+
+
+#### Análisis multivariado
+
+
+
+```{r}
+
+```
+
+
+### Ajuste del modelo de regresión logística
+
+------- AJUSTE INICIAL DE UN MODELO SIMPLE PARA LA INTERPRETACIÓN DE LOS ODDS Y LOS ODDS RATIOS-----
+
+
+#### Interpretación de los ODDS y los ODDS Ratios mediante ajuste de modelos simples de prueba
+
+```{r}
+####### GRAFICA DE LA OPCION BINOMINAL CON AJUSTE DE MODELO GLM
+ggplot(Train_copy_1, aes(x=Credit.Score, y=Loan.Status)) +
+  geom_jitter(height = .02, width = 0, alpha = 0.3) +
+  theme_bw()
+
+ggplot(Train_copy_1, aes(x=Annual.Income, y=Loan.Status)) +
+  geom_jitter(height = .02, width = 0, alpha = 0.3) +
+  theme_bw()
+
+ggplot(Train_copy_1, aes(x=Years.of.Credit.History, y=Loan.Status)) +
+  geom_jitter(height = .02, width = 0, alpha = 0.3) +
+  theme_bw()
+
+### METER EN UN GRID VERTICAL
+```
+
+Inicialmente ajustamos dos modelos logit simples, es decir con solo una variable independiente en estudio. Para este caso primero analizaremos e interpretaremos la razón de momios o el odd ratio entre el modelo `Loan.Status` ~ `Credit.Score`, y repetiremos ese mismo ejercicio pero para `Loan.Status` ~`Annual.Income`, y `Loan.Status` ~`Years.of.Credit.History`.
+
+- Iteración `Loan.Status` ~ `Credit.Score`
+```{r}
+# AJUSTE DEL MODELO SIMPLE (Loan.Status & Credit.Score)
+modelo_simple_1 = glm(data = Train_copy_1, 
+            formula = Loan.Status~Credit.Score,
+            family = "binomial")
+summary(modelo_simple_1)
+print("Coeficientes como exponencial del num de euler")
+exp(modelo_simple_1$coefficients)
+```
+Del modelo de regresión logistica `Loan.Status` ~ `Credit.Score` interpretamos que:
+- la independiente es estadisticamente signficante dentro del modelo para explicar `Loan.Status`.
+- El logaritmo del odd (probabilidad de exito sobre la probabilidad de fracaso) para `Credit.Score` es cercano a cero pero no igual a cero (0.0068726).
+- El odd ratio del `Credit.Score` $e^{0.0068726}$ es igual a $1.00689627$.
+
+De lo que podemos concluir que con un aumento en una unidad del Credit.Score es en un 0.6% más probable que se de un 1 que un 0, donde 1 es `Fully Paid` y 0 es `Charged Off`.
+
+(es aquí donde se hacen las apuestas de 4 a 1 por ejemplo, cuando el OR es 4.00)
+
+
+- Iteración `Loan.Status` ~ `Annual.Income`
+
+```{r}
+# AJUSTE DEL MODELO SIMPLE (Loan.Status & Annual.Income)
+modelo_simple_2 = glm(data = Train_copy_1, 
+            formula = Loan.Status~Annual.Income,
+            family = "binomial")
+summary(modelo_simple_2)
+print("Coeficientes como exponencial del num de euler")
+exp(modelo_simple_2$coefficients)
+```
+
+Del modelo de regresión logistica `Loan.Status` ~ `Annual.Income` interpretamos que:
+- la independiente es estadisticamente signficante dentro del modelo para explicar `Loan.Status`.
+- El logaritmo del odd (probabilidad de exito sobre la probabilidad de fracaso) para `Credit.Score` es 0, por lo que el odd ratio será igual a 1 ($e^{0} =1$), interpretando que un aumento o disminución en `Annual.Income` no explica ninguna razón de cambio en `Loan.Status`
+
+Por lo que podríamos valorar eliminar dicha variable del modelo, pero ¿ entonces por qué resulta ser estadísticamente significativa en un inicio?
+
+<!-- (es aquí donde se hacen las apuestas de 4 a 1 por ejemplo, cuando el OR es 4.00) -->
+
+
+
+```{r}
+# AJUSTE DEL MODELO SIMPLE (Loan.Status & umber.of.Credit.Problems)
+modelo_simple_3 = glm(data = Train_copy_1, 
+            formula = Loan.Status~Years.of.Credit.History,
+            family = "binomial")
+summary(modelo_simple_3)
+print("Coeficientes como exponencial del num de euler")
+exp(modelo_simple_3$coefficients)
+```
+Del modelo de regresión logistica `Loan.Status` ~ `Years.of.Credit.History` interpretamos que:
+- la independiente es estadisticamente signficante dentro del modelo para explicar `Loan.Status`.
+- El logaritmo del odd (probabilidad de exito sobre la probabilidad de fracaso) para `Years.of.Credit.History` es diferente a cero (0.010485).
+- El odd ratio del `Credit.Score` $e^{0.010485}$ es igual a $1.010540$.
+
+De lo que podemos concluir que con un aumento en una unidad de la variable `Years.of.Credit.History` es en un 1.05% más probable que se de un 1 que un 0, donde 1 es `Fully Paid` y 0 es `Charged Off`.
+
+
+
+
+
+
+#### Ajuste del modelo de regresión logística base (modelo 1)
+
+--------------- AJUSTE DEL MODELO DE REGRESION LOGISTICA MULTIPLE -------------------
+
+
+```{r}
+Train_copy_1_model = select(Train_copy_1, -c(ID))
+
+```
+
+
+Metemos todos los balones en una canasta y posteriormente sacamos los que no ajusten en el modelo
+
+##### Ajuste no.1
+
+```{r}
+modelo_multiple_1 = glm(data = Train_copy_1_model, 
+              formula = Loan.Status~., family = "binomial")
+summary(modelo_multiple_1)
+```
+```{r}
+anova(modelo_multiple_1)
+```
+
+
+Dado que no resultan significantes, estas variables se eliminan del modelo:
+
+Home.OwnershipHome
+Number.of.Open.Accounts
+Current.Credit.Balance 
+Maximum.Open.Credit
+Tax.Liens
+ID
+
+
+##### Modelo 1 con Ajuste no.1
+```{r}
+modelo_multiple_1 = update(object = modelo_multiple_1, formula. = .~.-Home.Ownership -Number.of.Open.Accounts -Current.Credit.Balance -Maximum.Open.Credit -Tax.Liens -Months.since.last.delinquent)
+summary(modelo_multiple_1)
+```
+##### Interacciones
+
+###### Interacción a
+
+- Annual.Income & Monthly.Debt
+
+Ajuste no. 1 plus (con interacciones previamente propuestas)
+
+
+```{r}
+modelo_multiple_1_plus = glm(data = Train_copy_1_model, 
+              formula = Loan.Status~Term+Years.in.current.job+Purpose+
+                Current.Loan.Amount+Credit.Score+Annual.Income*Monthly.Debt+Years.of.Credit.History+Number.of.Credit.Problems+Maximum.Open.Credit+Bankruptcies, family = "binomial")
+summary(modelo_multiple_1_plus)
+
+```
+```{r}
+anova(modelo_multiple_1_plus)
+```
+
+- Destacar con el modelo plus de interacción que el AIC para el modelo 1 plus a tiene un menor AIC que el modelo 1.
+```{r}
+modelo_multiple_1_plus$aic
+modelo_multiple_1$aic
+```
+Por lo que:
+- Hay que evaluar el PRESS y el MRSPE
+- Hay que evaluar en la validación cruzada qué version del modelo 1 es la mejor para predecir.
+
+Adicionalmente se ha probado la interacción de: Current.Credit.Balance & Maximum.Open.Credit pero no se han encontrado resultados que la favorezcan.
+
+
+---------------------------------------------------
+
+
+##### Intervalos de confianza del Ajuste no.1
+```{r}
+confint(object = modelo_multiple_1, level = 0.95)
 ```
 
 
 
+##### Ecuación
+- Identificando la ecuación
+
+
+```{r}
+# Obtener el vector de coeficientes del modelo
+coeficientes <- coef(modelo_multiple_1)
+
+# Obtener los nombres de las variables del modelo
+nombres_vars <- names(coeficientes)[-1]
+
+# Crear una cadena con la ecuación del modelo
+cadena_ecuacion <- paste(round(coeficientes[1], 4), "+",
+                         paste(round(coeficientes[-1], 4), nombres_vars, sep = "*"), collapse = " + ")
+
+# Imprimir la ecuación del modelo
+cat("La ecuación del modelo es:\n", cadena_ecuacion, "\n")
+```
+
+
+- Identificando los coeficientes
+
+```{r}
+nombres_vars = names(coef(modelo_multiple_1))
+resumen = summary(modelo_multiple_1)
+
+# Iterar por cada variable e imprimir su nombre y coeficiente
+for (i in seq_along(nombres_vars)) {
+  cat(paste(nombres_vars[i], ": ", resumen$coefficients[i, "Estimate"], "\n"))
+}
+```
+
+##### ODDS Ratios del ajuste no.1
+- Identificando los odds ratios 
+$e^{B_{k}}$
+
+
+```{r}
+nombres_vars = names(coef(modelo_multiple_1))
+resumen = summary(modelo_multiple_1)
+
+# Iterar por cada variable e imprimir su nombre y el num de euler elevado al coeficiente
+for (i in seq_along(nombres_vars)) {
+  cat(paste(nombres_vars[i], ": ", exp(resumen$coefficients[i, "Estimate"]), "\n"))
+}
+```
+
+
+
+##### Predicción y Matriz de confusión para el modelo no. 1
+
+- Predicción
+
+Estableciendo una predicción con punto de corte arbitrario de 0.85
+```{r}
+prediccion_1 = predict(object = modelo_multiple_1,
+                    newdata = Train_copy_1_model, type = "response")
+
+Prediccion_1<-as.factor(ifelse(prediccion_1<=0.85,yes = 1, no = 0))
+
+table(Prediccion_1)
+
+print("Valores reales")
+table(Train_copy_1_model$Loan.Status)
+```
+
+- Matriz de confusión con punto de corte de 0.85 (arbitrario)
+```{r}
+confusionMatrix(reference = as.factor(Train_copy_1_model$Loan.Status), Prediccion_1)
+#confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), 
+#                             Prediccion)
+```
+
+#### Modelo optimizado con el punto máximo de la curva de exactitud (punto de corte ideal)
+<!-- # ```{r} -->
+<!-- # Exactitud = vector() -->
+<!-- # Corte = seq(0.35,0.95, by = 0.001) -->
+<!-- # for(i in 1:length(Corte)){ -->
+<!-- #   #print(Corte[i]) -->
+<!-- #   Prediccion<-as.factor(ifelse(prediccion<=Corte[i],yes = 1, no = 0)) -->
+<!-- #    -->
+<!-- #   Exactitud[i]<-confusionMatrix(data = as.factor(Train_copy_1$Loan.Status),  -->
+<!-- #                              Prediccion)$overall[1] -->
+<!-- # } -->
+<!-- #  -->
+<!-- # plot(x=Corte, y = Exactitud, type = "l") -->
+<!-- # ``` -->
+
+```{r}
+Exactitud_1 <- vector()
+Corte_1 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_1)) {
+  Prediccion <- as.factor(ifelse(prediccion_1 <= Corte_1[i], yes = 1, no = 0))
+  
+  Exactitud_1[i] <- tryCatch(
+    {
+      confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), Prediccion)$overall[1]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado que desees asignar
+    }
+  )
+}
+
+plot(x=Corte_1, y = Exactitud_1, type = "l", main ="Punto de corte óptimo", xlab="Corte", ylab="Exactitud")
+```
+- ubicando tal punto de corte óptimo
+
+```{r}
+corte_optimo_1 = which(Exactitud_1==max(Exactitud_1))
+Corte_1[corte_optimo_1]
+```
+##### Predicción y matriz de confusión para el modelo no. 1 ajustado con punto de corte optimo
+
+- Generando una nueva predicción con el punto de corte óptimo para el modelo ajustado
+```{r}
+
+Prediccion_1_2<-as.factor(ifelse(prediccion_1<=Corte_1[corte_optimo_1],yes = 1, no = 0))
+confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), 
+                             Prediccion_1_2)
+```
+
+```{r}
+table(Train_copy_1_model$Loan.Status)
+table(Prediccion_1_2)
+```
+##### Curva ROC modelo ajustado no.1
+
+```{r}
+##### Comparar modelo ya ajustado (no.1) con uno nuevo y muy simple
+Prediccion_1_roc<-predict(object = modelo_multiple_1,
+                    newdata = Train_copy_1_model, type = "response", 
+                    se.fit = T)
+
+predicciones_roc<-prediction(Prediccion_1_roc$fit,Train_copy_1$Loan.Status)
+Desempeno_roc_1<-performance(predicciones_roc,'tpr','fpr')
+
+## Cgenerando nuevo modelo simple
+modelo_simple_4 <- glm(data = Train_copy_1, 
+              formula = Loan.Status~Purpose+Bankruptcies, family = "binomial")
+
+Prediccion_3_simple<-predict(object = modelo_simple_4,
+                    newdata = Train_copy_1_model, type = "response", 
+                    se.fit = T)
+
+predicciones3_simple<-prediction(Prediccion_3_simple$fit,Train_copy_1_model$Loan.Status)
+Desempeno3_simple<-performance(predicciones3_simple,'tpr','fpr')
+
+#ejecutar en conjunto
+plot(Desempeno_roc_1,col="firebrick")
+plot(Desempeno3_simple, col = "darkgreen", add = T)
+```
+
+El primer modelo ajustado, aunque en la matriz de confusion arroja un 80% de accuracy, apenas es mejor que uno simple.
+- hay que estudiar cómo se compone una matriz de confusión para ver en que apartados puede estar fallando.
+
+
+
+
+
+
+
+
+
+
+
+#### Aspectos a tomar en cuenta
+
+- Al igual que en el caso de la regresión lineal, los resultados obtenidos usando solo un predictor pueden diferir respecto a aquellos obtenidos usando múltiples predictores, especialmente cuando existe correlación entre ellos. Este fenómeno se conoce como confusión (confounding).
+
+- CONDICIONES DEL MODELO LOGÍSTICO
+• Respuesta binaria: La variable dependiente ha de ser binaria.
+
+• Independencia: las observaciones han de ser independientes.
+
+• Multicolinealidad: se requiere de muy poca a ninguna multicolinealidad entre los predictores (para regresión logística múltiple).
+
+• Linealidad entre la variable independiente y el logaritmo natural de odds.
+
+
+
+
+
+
+
+#### Apartado de dudas:
+
+
+1. - En el caso de que se tenga más de un nivel en una variable ordinal o nominal en la ecuación del modelo, cómo se interpreta el valor de la primera variable que deberia situarse en el intercepto, pero ahora hay más de una de estas variables representadas en el impacto del intercepto o constante.
+--- ejemplo: variable cualitativa termino y variable cualitativa proposito, en ambas se pierde un nivel representado en el intercepto, cómo se encuentra el impacto aislado de cada una?
+
+2. - ¿Cómo comparar odds ratios entre si?
+
+Caso de ejemplo:
+Purposebuy a car :  2.77158367672821 
+Purposebuy house :  1.28198643667157 
+
+¿ cómo puedo explicar y en que medida es más probable que alguien que pida el credito para comprar un carro pague el crédito comparado con alguien que lo pida para casa?
+
+
+
+3. - ¿Por qué el coeficiente y el odds ratio para Purposerenewable_energy es muy alto?
