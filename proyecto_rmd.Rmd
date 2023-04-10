@@ -21,6 +21,10 @@ library(dataxray)
 library(correlationfunnel)
 library(caret)
 library(ROCR)
+library(olsrr)
+library(leaps)
+library(boot)
+library(Amelia)
 ```
 
 ```{r, cargando Rdata}
@@ -87,6 +91,14 @@ Sobre la variable dependiente y de acuerdo con la siguiente pagina web:
 Fuente: https://budgeting.thenest.com/account-paid-full-vs-chargeoff-23884.html
 
 ### Análisis exploratorio
+
+##### Valores faltantes
+
+```{r}
+missmap(Train_copy, main = "Missing values vs observed")
+```
+
+
 
 #### Análisis univariado
 
@@ -839,39 +851,6 @@ ID
 modelo_multiple_1 = update(object = modelo_multiple_1, formula. = .~.-Home.Ownership -Number.of.Open.Accounts -Current.Credit.Balance -Maximum.Open.Credit -Tax.Liens -Months.since.last.delinquent)
 summary(modelo_multiple_1)
 ```
-##### Interacciones
-
-###### Interacción a
-
-- Annual.Income & Monthly.Debt
-
-Ajuste no. 1 plus (con interacciones previamente propuestas)
-
-
-```{r}
-modelo_multiple_1_plus = glm(data = Train_copy_1_model, 
-              formula = Loan.Status~Term+Years.in.current.job+Purpose+
-                Current.Loan.Amount+Credit.Score+Annual.Income*Monthly.Debt+Years.of.Credit.History+Number.of.Credit.Problems+Maximum.Open.Credit+Bankruptcies, family = "binomial")
-summary(modelo_multiple_1_plus)
-
-```
-```{r}
-anova(modelo_multiple_1_plus)
-```
-
-- Destacar con el modelo plus de interacción que el AIC para el modelo 1 plus a tiene un menor AIC que el modelo 1.
-```{r}
-modelo_multiple_1_plus$aic
-modelo_multiple_1$aic
-```
-Por lo que:
-- Hay que evaluar el PRESS y el MRSPE
-- Hay que evaluar en la validación cruzada qué version del modelo 1 es la mejor para predecir.
-
-Adicionalmente se ha probado la interacción de: Current.Credit.Balance & Maximum.Open.Credit pero no se han encontrado resultados que la favorezcan.
-
-
----------------------------------------------------
 
 
 ##### Intervalos de confianza del Ajuste no.1
@@ -954,20 +933,7 @@ confusionMatrix(reference = as.factor(Train_copy_1_model$Loan.Status), Prediccio
 #                             Prediccion)
 ```
 
-#### Modelo optimizado con el punto máximo de la curva de exactitud (punto de corte ideal)
-<!-- # ```{r} -->
-<!-- # Exactitud = vector() -->
-<!-- # Corte = seq(0.35,0.95, by = 0.001) -->
-<!-- # for(i in 1:length(Corte)){ -->
-<!-- #   #print(Corte[i]) -->
-<!-- #   Prediccion<-as.factor(ifelse(prediccion<=Corte[i],yes = 1, no = 0)) -->
-<!-- #    -->
-<!-- #   Exactitud[i]<-confusionMatrix(data = as.factor(Train_copy_1$Loan.Status),  -->
-<!-- #                              Prediccion)$overall[1] -->
-<!-- # } -->
-<!-- #  -->
-<!-- # plot(x=Corte, y = Exactitud, type = "l") -->
-<!-- # ``` -->
+##### Modelo optimizado con el punto máximo de la curva de exactitud (punto de corte ideal)
 
 ```{r}
 Exactitud_1 <- vector()
@@ -1039,13 +1005,505 @@ El primer modelo ajustado, aunque en la matriz de confusion arroja un 80% de acc
 - hay que estudiar cómo se compone una matriz de confusión para ver en que apartados puede estar fallando.
 
 
+##### Interacciones
+
+###### Interacción a
+
+- Annual.Income & Monthly.Debt
+
+Ajuste no. 1 plus (con interacciones previamente propuestas)
+
+
+```{r}
+modelo_multiple_1_plus = glm(data = Train_copy_1_model, 
+              formula = Loan.Status~Term+Years.in.current.job+Purpose+
+                Current.Loan.Amount+Credit.Score+Annual.Income*Monthly.Debt+Years.of.Credit.History+Number.of.Credit.Problems+Maximum.Open.Credit+Bankruptcies, family = "binomial")
+summary(modelo_multiple_1_plus)
+
+
+```
+
+```{r}
+anova(modelo_multiple_1_plus)
+```
+
+- Destacar con el modelo plus de interacción que el AIC para el modelo 1 plus a tiene un menor AIC que el modelo 1.
+```{r}
+modelo_multiple_1_plus$aic
+modelo_multiple_1$aic
+```
+Por lo que:
+- Hay que evaluar el PRESS y el MRSPE
+- Hay que evaluar en la validación cruzada qué version del modelo 1 es la mejor para predecir.
+
+Aunque es de mencionar que la variable Maximum.Open.Credit con esta interacción recobró signficancia.
+
+Adicionalmente se ha probado la interacción de: Current.Credit.Balance & Maximum.Open.Credit pero no se han encontrado resultados que la favorezcan.
+
+##### Intervalos de confianza del modelo no. 1 plus
+```{r}
+confint(object = modelo_multiple_1_plus, level = 0.95)
+```
+
+
+##### Ecuación para el modelo no. 1 plus
+- Identificando la ecuación
+
+
+```{r}
+# Obtener el vector de coeficientes del modelo
+coeficientes <- coef(modelo_multiple_1_plus)
+
+# Obtener los nombres de las variables del modelo
+nombres_vars <- names(coeficientes)[-1]
+
+# Crear una cadena con la ecuación del modelo
+cadena_ecuacion <- paste(round(coeficientes[1], 4), "+",
+                         paste(round(coeficientes[-1], 4), nombres_vars, sep = "*"), collapse = " + ")
+
+# Imprimir la ecuación del modelo
+cat("La ecuación del modelo es:\n", cadena_ecuacion, "\n")
+```
+
+- Identificando los coeficientes para el modelo no. 1 plus
+ 
+```{r}
+nombres_vars = names(coef(modelo_multiple_1_plus))
+resumen = summary(modelo_multiple_1_plus)
+
+# Iterar por cada variable e imprimir su nombre y coeficiente
+for (i in seq_along(nombres_vars)) {
+  cat(paste(nombres_vars[i], ": ", resumen$coefficients[i, "Estimate"], "\n"))
+}
+```
+
+##### ODDS Ratios para el modelo no. 1 plus
+- Identificando los odds ratios 
+$e^{B_{k}}$
+
+
+```{r}
+nombres_vars = names(coef(modelo_multiple_1_plus))
+resumen = summary(modelo_multiple_1_plus)
+
+# Iterar por cada variable e imprimir su nombre y el num de euler elevado al coeficiente
+for (i in seq_along(nombres_vars)) {
+  cat(paste(nombres_vars[i], ": ", exp(resumen$coefficients[i, "Estimate"]), "\n"))
+}
+```
+
+
+
+##### Predicción y Matriz de confusión para el modelo no. 1 plus
+
+- Predicción
+
+Estableciendo una predicción con punto de corte arbitrario de 0.85
+```{r}
+prediccion_1_plus = predict(object = modelo_multiple_1_plus,
+                    newdata = Train_copy_1_model, type = "response")
+
+Prediccion_1_plus<-as.factor(ifelse(prediccion_1_plus<=0.85,yes = 1, no = 0))
+
+table(Prediccion_1_plus)
+
+print("Valores reales")
+table(Train_copy_1_model$Loan.Status)
+```
+- Matriz de confusión para el modelo 1 plus con punto de corte de 0.85 (arbitrario)
+```{r}
+confusionMatrix(reference = as.factor(Train_copy_1_model$Loan.Status), Prediccion_1_plus)
+
+```
+
+##### Modelo optimizado con el punto máximo de la curva de exactitud (punto de corte ideal)
+
+```{r}
+Exactitud_1_plus <- vector()
+Corte_1_plus <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_1_plus)) {
+  Prediccion <- as.factor(ifelse(prediccion_1_plus <= Corte_1_plus[i], yes = 1, no = 0))
+  
+  Exactitud_1_plus[i] <- tryCatch(
+    {
+      confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), Prediccion)$overall[1]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado que desees asignar
+    }
+  )
+}
+
+plot(x=Corte_1_plus, y = Exactitud_1_plus, type = "l", main ="Punto de corte óptimo", xlab="Corte", ylab="Exactitud")
+```
+- ubicando tal punto de corte óptimo
+
+```{r}
+corte_optimo_1_plus = which(Exactitud_1_plus==max(Exactitud_1_plus))
+Corte_1_plus[corte_optimo_1_plus]
+```
+##### Predicción y matriz de confusión para el modelo no. 1 plus con punto de corte optimo
+
+- Generando una nueva predicción con el punto de corte óptimo para el modelo ajustado
+```{r}
+
+Prediccion_1_2_plus<-as.factor(ifelse(prediccion_1_plus<=Corte_1_plus[corte_optimo_1_plus],yes = 1, no = 0))
+confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), 
+                             Prediccion_1_2_plus)
+```
+
+##### Curva ROC modelo 1 plus
+
+```{r}
+##### Comparar modelo ya ajustado (no.1) con uno nuevo y muy simple
+Prediccion_1_plus_roc<-predict(object = modelo_multiple_1_plus,
+                    newdata = Train_copy_1_model, type = "response", 
+                    se.fit = T)
+
+predicciones_roc_plus<-prediction(Prediccion_1_plus_roc$fit,Train_copy_1$Loan.Status)
+Desempeno_roc_1_plus<-performance(predicciones_roc_plus,'tpr','fpr')
+
+## Cgenerando nuevo modelo simple
+modelo_simple_4 <- glm(data = Train_copy_1, 
+              formula = Loan.Status~Purpose+Bankruptcies, family = "binomial")
+
+Prediccion_3_simple<-predict(object = modelo_simple_4,
+                    newdata = Train_copy_1_model, type = "response", 
+                    se.fit = T)
+
+predicciones3_simple<-prediction(Prediccion_3_simple$fit,Train_copy_1_model$Loan.Status)
+Desempeno3_simple<-performance(predicciones3_simple,'tpr','fpr')
+
+#ejecutar en conjunto
+plot(Desempeno_roc_1_plus,col="firebrick")
+plot(Desempeno3_simple, col = "darkgreen", add = T)
+```
+
+En este modelo con interacción, si bien el AIC disminuyó, también el accuracy que nos brinda la matriz de confusión. Se recomienda evaluar el PRESS y el MRPS para evaluar su viabilidad frente al modelo 1.
+
+
+#### Reducción de dimensiones
+
+En este apartado se pretende evaluar el modelo no.1 con la finalidad de obtener el numero optimo de variables y que variables son las que conforman el modelo optimo.
+
+##### Selección de variables
+```{r}
+### Con la libreria OLSRR no es posible trabajar modelos glm
+# Todos_1 = ols_step_all_possible(modelo_multiple_1)
+# plot(Todos_1)
+```
+#### Modelo 2
+
+Selección de variables por medio de stepwise & estadístico Cp de mallow
+```{r}
+Variables = colnames(Train_copy_1_model)
+##***Exhaustivo
+Subs<-regsubsets(data = Train_copy_1_model, x = Loan.Status~., nbest=5, 
+                 method = "exhaustive")#intensivo
+
+plot(Subs, scale = c( "Cp"), main="Cp de Mallow")#Cp de mallow
+```
+
+- Ajustando el modelo propuesto por el cp de mallow 
+```{r}
+modelo_multiple_2 = glm(data = Train_copy_1_model, 
+              formula = Loan.Status~Term+Home.Ownership+Purpose+Current.Loan.Amount+
+                Credit.Score+Annual.Income+Monthly.Debt, family = "binomial")
+summary(modelo_multiple_2)
+```
+Dicho modelo presenta un AIC menor que el modelo no. 1 (26494.82 vs 26517.4)
+
+```{r}
+modelo_multiple_2$aic
+```
+
+
+```{r}
+confint(object = modelo_multiple_2, level = 0.95)
+```
+
+##### Ecuación para el modelo no. 2
+- Identificando la ecuación
+
+
+```{r}
+# Obtener el vector de coeficientes del modelo
+coeficientes <- coef(modelo_multiple_2)
+
+# Obtener los nombres de las variables del modelo
+nombres_vars <- names(coeficientes)[-1]
+
+# Crear una cadena con la ecuación del modelo
+cadena_ecuacion <- paste(round(coeficientes[1], 4), "+",
+                         paste(round(coeficientes[-1], 4), nombres_vars, sep = "*"), collapse = " + ")
+
+# Imprimir la ecuación del modelo
+cat("La ecuación del modelo es:\n", cadena_ecuacion, "\n")
+```
+
+- Identificando los coeficientes para el modelo no. 1 plus
+ 
+```{r}
+nombres_vars = names(coef(modelo_multiple_2))
+resumen = summary(modelo_multiple_2)
+
+# Iterar por cada variable e imprimir su nombre y coeficiente
+for (i in seq_along(nombres_vars)) {
+  cat(paste(nombres_vars[i], ": ", resumen$coefficients[i, "Estimate"], "\n"))
+}
+```
+
+##### ODDS Ratios para el modelo no. 1 plus
+- Identificando los odds ratios 
+$e^{B_{k}}$
+
+
+```{r}
+nombres_vars = names(coef(modelo_multiple_2))
+resumen = summary(modelo_multiple_2)
+
+# Iterar por cada variable e imprimir su nombre y el num de euler elevado al coeficiente
+for (i in seq_along(nombres_vars)) {
+  cat(paste(nombres_vars[i], ": ", exp(resumen$coefficients[i, "Estimate"]), "\n"))
+}
+```
+
+
+
+##### Predicción y Matriz de confusión para el modelo no. 1 plus
+
+- Predicción
+
+Estableciendo una predicción con punto de corte arbitrario de 0.85
+```{r}
+prediccion_2 = predict(object = modelo_multiple_2,
+                    newdata = Train_copy_1_model, type = "response")
+
+Prediccion_2<-as.factor(ifelse(prediccion_2<=0.85,yes = 1, no = 0))
+
+table(Prediccion_2)
+
+print("Valores reales")
+table(Train_copy_1_model$Loan.Status)
+```
+- Matriz de confusión para el modelo 1 plus con punto de corte de 0.85 (arbitrario)
+```{r}
+confusionMatrix(reference = as.factor(Train_copy_1_model$Loan.Status), Prediccion_2)
+
+```
+
+##### Modelo optimizado con el punto máximo de la curva de exactitud (punto de corte ideal)
+
+```{r}
+Exactitud_2 <- vector()
+Corte_2 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_2)) {
+  Prediccion <- as.factor(ifelse(prediccion_2 <= Corte_2[i], yes = 1, no = 0))
+  
+  Exactitud_2[i] <- tryCatch(
+    {
+      confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), Prediccion)$overall[1]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado
+    }
+  )
+}
+
+plot(x=Corte_2, y = Exactitud_2, type = "l", main ="Punto de corte óptimo", xlab="Corte", ylab="Exactitud")
+```
+- ubicando tal punto de corte óptimo
+
+```{r}
+corte_optimo_2 = which(Exactitud_2==max(Exactitud_2))
+Corte_2[corte_optimo_2]
+```
+##### Predicción y matriz de confusión para el modelo no. 1 plus con punto de corte optimo
+
+- Generando una nueva predicción con el punto de corte óptimo para el modelo ajustado
+```{r}
+
+Prediccion_2_1<-as.factor(ifelse(prediccion_2<=Corte_2[corte_optimo_2],yes = 1, no = 0))
+confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), 
+                             Prediccion_2_1)
+```
+
+##### Curva ROC modelo 1 plus
+
+```{r}
+##### Comparar modelo ya ajustado (no.1) con uno nuevo y muy simple
+Prediccion_2_roc<-predict(object = modelo_multiple_2,
+                    newdata = Train_copy_1_model, type = "response", 
+                    se.fit = T)
+
+predicciones_roc_2=prediction(Prediccion_2_roc$fit,Train_copy_1$Loan.Status)
+Desempeno_roc_2<-performance(predicciones_roc_2,'tpr','fpr')
+
+## Cgenerando nuevo modelo simple
+modelo_simple_4 <- glm(data = Train_copy_1, 
+              formula = Loan.Status~Purpose+Bankruptcies, family = "binomial")
+
+Prediccion_3_simple<-predict(object = modelo_simple_4,
+                    newdata = Train_copy_1_model, type = "response", 
+                    se.fit = T)
+
+predicciones3_simple<-prediction(Prediccion_3_simple$fit,Train_copy_1_model$Loan.Status)
+Desempeno3_simple<-performance(predicciones3_simple,'tpr','fpr')
+
+#ejecutar en conjunto
+plot(Desempeno_roc_2,col="firebrick")
+plot(Desempeno3_simple, col = "darkgreen", add = T)
+```
+
+Aunque el accuracy del modelo no.2 bajo en un 0.01 punto, preferimos un modelo más ligero y más manejable, por lo que nos quedamos con este último modelo.
+
+
+#### Cumplimiento de supuestos del modelo de regresión logistica 
+
+
+##### Multicolinealidad (VIF) y ajuste del modelo
+• Multicolinealidad: se requiere de muy poca a ninguna multicolinealidad entre los predictores (para regresión logística múltiple).
+
+##### Respuesta binaria: La variable dependiente ha de ser binaria.
+
+##### Independencia: las observaciones han de ser independientes.
+
+
+#####  Linealidad entre la variable independiente y el logaritmo natural de odds.
+
+
+---
+
+
+#### Cross validation
+
+El modelo actual seleccionado (modelo no.2) podría sufrir de sobre-ajuste dado que se empleo toda la muestra para su modelado. Por lo que procedemos a hacer la validación cruzada del modelo para obtener un modelo que no solo sea efectivo en la muestr actual, si no en otras muestras no estudiadas antes.
+
+<!-- Por lo que el proceso será le siguiente: -->
+
+<!-- - La muestra actual la dividimos entre 3 grupos, la agrupación será completamente aleatoria, 3 grupos de los cuales haremos combinación de un par para train y el grupo que queda para test. Cada iteración nos arrojara un modelo distinto, lo que nos permitira lidiar con el sobre ajuste y generalizar más nuestro modelo. -->
+
+##### Validación cruzada para los modelos: modelo no. 1, modelo no.1 plus y modelo no. 2
+
+
+###### k pliegues
+
+$delta returns a vector of length two. The first component is the raw cross-validation estimate of prediction error. The second component is the adjusted cross-validation estimate. The adjustment is designed to compensate for the bias introduced by not using leave-one-out cross-validation.
+
+```{r}
+#########1.3 k pliegues ################
+MSE_kf_1 <- cv.glm(data = Train_copy_1_model,
+               glmfit = modelo_multiple_1, 
+               K = 100)
+MSE_kf_1$delta
+```
+```{r}
+#########1.3 k pliegues ################
+MSE_kf_1_plus <- cv.glm(data = Train_copy_1_model,
+               glmfit = modelo_multiple_1_plus, 
+               K = 100)
+MSE_kf_1_plus$delta
+```
+
+```{r}
+#########1.3 k pliegues ################
+MSE_kf_2 <- cv.glm(data = Train_copy_1_model,
+               glmfit = modelo_multiple_2, 
+               K = 100)
+MSE_kf_2$delta
+```
+
+En la validación cruza por k pliegues evaluada para los 3 modelos disponibles se puede interpretar que el error cuadratico medio (MSE, por sus siglas en inglés) del modelo es menor, lo cuál es la intención, para el modelo multiple no.2, que a su vez resulta ser el que elegimos previamente porque tenía practicamente el mismo accuracy en la matriz de confusión que el modelo no.1 plus (que mostró superioridad respecto al modelo no.1 en este mismo apartado), y además se reducian las variables del modelo. 
+
+
+######  MSPR 
+
+
+MSPR para el modelo multiple no. 1
+```{r}
+set.seed(123)
+indices <- createDataPartition(Train_copy_1_model$Loan.Status, p = 0.7, list = FALSE)
+Train <- Train_copy_1_model[indices, ]
+Test <- Train_copy_1_model[-indices, ]
+
+# Obtener las predicciones en el conjunto de prueba
+predicciones <- predict(modelo_multiple_1, newdata = Test, type = "response")
+
+# Calcular el MSPR con un modelo de clasifiacion binaria
+MSPR <- mean((Test$Loan.Status == 1) - predicciones)^2
+
+# Imprimir el resultado
+print(paste0("MSPR = ", MSPR))
+```
+MSPR para el modelo multiple no. 1 plus
+
+```{r}
+set.seed(123)
+indices <- createDataPartition(Train_copy_1_model$Loan.Status, p = 0.7, list = FALSE)
+Train <- Train_copy_1_model[indices, ]
+Test <- Train_copy_1_model[-indices, ]
+
+# Obtener las predicciones en el conjunto de prueba
+predicciones <- predict(modelo_multiple_1_plus, newdata = Test, type = "response")
+
+# Calcular el MSPR
+MSPR <- mean((Test$Loan.Status == 1) - predicciones)^2
+
+# Imprimir el resultado
+print(paste0("MSPR = ", MSPR))
+
+#unique(Test$Loan)
+```
+
+MSPR para el modelo multiple no. 2
+
+```{r}
+set.seed(123)
+indices <- createDataPartition(Train_copy_1_model$Loan.Status, p = 0.7, list = FALSE)
+Train <- Train_copy_1_model[indices, ]
+Test <- Train_copy_1_model[-indices, ]
+
+# Obtener las predicciones en el conjunto de prueba
+predicciones <- predict(modelo_multiple_2, newdata = Test, type = "response")
+
+# Calcular el MSPR
+MSPR <- mean((Test$Loan.Status == 1) - predicciones)^2
+
+# Imprimir el resultado
+print(paste0("MSPR = ", MSPR))
+
+#unique(Test$Loan)
+```
+
+#### Bootstraping o remuestreo.
+
+Una vez que la validación cruzada ha demostrado que el mejor modelo es el modelo no. 2
 
 
 
 
+#### Predicción de `fully paid` or `Charged off` para casos especificos
+Una vez que el modelo se ha ajustado, podemos emplearlo para predecir resultados individuales
+
+```{r}
+#define two individuals
+#new <- data.frame(balance = 1400, income = 2000, student = c("Yes", "No"))
+# 
+# #predict probability of defaulting
+# predict(model, new, type="response")
+
+#          1          2 
+# 0.02732106 0.04397747
+```
+
+
+#### Outliers y valores leverage en coeficientes (también distancia de cook) 
 
 
 
+#### Pruebas en Test
 
 
 #### Aspectos a tomar en cuenta
@@ -1084,3 +1542,14 @@ Purposebuy house :  1.28198643667157
 
 
 3. - ¿Por qué el coeficiente y el odds ratio para Purposerenewable_energy es muy alto?
+
+4. - EL modelo OLSRR que nos indica por estadístico las variables ideales, toma en cuenta interacciones?
+
+5. En la selección de variables se recurrió al estadístico cp de mallow porque no encontramos escala del PRESS ¿Cómo emplear el PRESS?
+plot(Subs, scale = c( "Cp"), main="Cp de Mallow")#Cp de mallow
+
+6. ¿El calculo del MSPR se hace apropiadamente para un modelo de respuesta binaria?
+
+7. ¿Cómo manejar la multicolinealidad en un modelo de regresión lineal?
+
+8. Si los estadísticos de predicción arrojan buenos valores, ¿por qué la curva ROC no es la mejor?
