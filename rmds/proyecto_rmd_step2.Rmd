@@ -1,0 +1,1850 @@
+---
+title: "proyecto_rmd"
+author: "Alexis Rangel"
+date: "2023-04-05"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, librerias}
+library(tidyverse)
+library(explore)
+library(tidyr)
+library(gridExtra)
+library(glue)
+library(PerformanceAnalytics)
+library(dataxray)
+library(correlationfunnel)
+library(caret)
+library(ROCR)
+library(olsrr)
+library(leaps)
+library(boot)
+library(Amelia)
+library(car)
+library(MASS)
+library(RColorBrewer)
+library(paletteer)
+```
+
+```{r, cargando Rdata}
+load("~/Maestria/1er semestre/Modelos lineales/Proyecto final de curso Modelos Lineales MAEA 1er semestre/brief/DatosParaProyecto.RData")
+```
+
+### Objetivo y alcances del proyecto
+
+
+### Descripción de la base
+
+```{r}
+# View(Train)
+# names(Train)
+
+Train_copy = Train
+Test_copy = Test
+# nrow(Train_copy)
+
+nrow(Train_copy)
+nrow(Train)
+```
+
+
+La base de datos consta de 18 variable, una variable a predecir y 17 candidatas a predictoras.
+34209 registros de cada variable.
+
+Sobre la base:
+
+1. Loan.Status (VARIABLE DICOTOMA A PREDECIR, VALORES POSIBLES -> [Fully Paid, Charged Off])
+
+Nombre variable | tipo de variable | num valores posibles | valores posibles
+
+2. Term | nominal | 2 | ["Long Term",  "Short Term"]
+3. Years.in.current.job | ordinal | 12 | ["n/a", "< 1 year", "1 year":"9 years", "10+ years"]
+4. Home.Ownership | nominal | 4 | ["Rent", "Home Mortgage", "Own Home", "HaveMortgage" ]
+5. Purpose | nominal | 16 | [...>15 valores posibles...] | << Requiere homologar como factor "other" and "Other" >>
+6. Current.Loan.Amount | continua | [min -> 21449.74	, mean -> 14044734.38, max -> 100000002.5]
+7. Credit.Score	 | continua | [min -> 584.00, mean -> 1048.48, max -> 7509.0]
+8. Annual.Income	| continua | [min -> 164596.55, mean -> 1441110.95, max -> 30838993.9]
+9. Monthly.Debt	 | continua | [min -> 0.00, mean -> 19025.56, max -> 229056.4]
+10. Years.of.Credit.History	 | continua | [min -> 2.30, mean -> 19.21, max -> 59.6]
+11. Months.since.last.delinquent | continua | [min-> 0.00, mean -> 34.96, max -> 178.1]
+(Meses desde el último moroso)
+12. Number.of.Open.Accounts	 | continua | [min ->  0.00, mean -> 11.43, max -> 49.0]
+13. Number.of.Credit.Problems	 | continua | [min -> 0.00, mean -> 0.53, max -> 15.0
+]
+14. Current.Credit.Balance	| continua | [min ->  0.00, mean -> 259532.60, max -> 7140732.6]
+15. Maximum.Open.Credit	| continua | [min ->  0.00, mean -> 666270.83, max -> 798255369.7]
+16. Bankruptcies | continua | [min ->  0.00, mean -> 0.46, max -> 7.0]
+17. Tax.Liens	 | continua | [min ->  0.00, mean -> 0.42, max -> 14.0]
+(gravámenes fiscales)
+18. ID ---- excluir variable de cualquier análisis ----
+
+-------- agrupando variables para el análisis grafico univariado --------
+
+Conteos:
+nominal - 3
+ordinal - 1
+continua - 8
+
+
+Sobre la variable dependiente y de acuerdo con la siguiente pagina web:
+
+**A charge-off is the opposite of paid in full. It means the lender hasn't received payment for at least 180 days, and the account is in default. The lender, or a third-party collection agency, can still come after this kind of debt. Charge-offs have an extremely negative effect on your credit score.**
+
+Fuente: https://budgeting.thenest.com/account-paid-full-vs-chargeoff-23884.html
+
+### Análisis exploratorio
+
+##### Valores faltantes
+
+```{r}
+missmap(Train_copy, main = "Missing values vs observed")
+```
+
+
+
+##### Análisis univariado
+
+Inicialmente pasamos a binario el pago (Fully Paid) o el default (Charged Off) con un 1 y un 0 respectivamente.
+
+```{r}
+table(Train_copy$Loan.Status)
+```
+
+
+```{r}
+Train_copy$Loan.Status = ifelse(Train_copy$Loan.Status  == "Fully Paid", 1, 0)
+Train_copy$Loan.Status = as.factor(Train_copy$Loan.Status)
+```
+
+Loan.Status
+```{r}
+ggplot(Train_copy, aes(fct_infreq(Loan.Status)))+
+  geom_bar(stat="count")+
+  labs(title = "Variable 'Loan.Status'",
+       x = "Plazo",
+       y = "Frecuencia") +
+  theme_bw() +
+  # Agregar el número de observaciones al filo de cada barra
+  geom_text(stat = "count", aes(label = after_stat(format(count, big.mark = ","))), vjust = -0.5)
+```
+
+#####  Análisis univariado variables nominales y ordinales
+
+Paso numero 1, pasar a factores todas estas variables nominales y ordinales
+
+a. Term
+```{r}
+#class(Train_copy$Term)
+Train_copy$Term = as.factor(Train_copy$Term)
+
+ggplot(Train_copy, aes(fct_infreq(Term)))+
+  geom_bar(stat="count")+
+  labs(title = "Variable 'Term'",
+       x = "Plazo",
+       y = "Frecuencia") +
+  theme_bw() +
+  # Agregar el número de observaciones al filo de cada barra
+  geom_text(stat = "count", aes(label = after_stat(format(count, big.mark = ","))), vjust = -0.5)
+```
+
+b. Years.in.current.job
+```{r}
+Train_copy$Years.in.current.job = as.factor(Train_copy$Years.in.current.job)
+
+ggplot(Train_copy, aes(fct_infreq(Years.in.current.job)))+
+  geom_bar(stat="count")+
+  labs(title = "Variable 'Years.in.current.job'",
+       x = "Años",
+       y = "Frecuencia") +
+  theme_bw() +
+  # Agregar el número de observaciones al filo de cada barra
+  geom_text(stat = "count", aes(label = after_stat(format(count, big.mark = ","))), vjust = -0.5)
+```
+c. Home.Ownership
+```{r}
+Train_copy$Home.Ownership = as.factor(Train_copy$Home.Ownership)
+
+ggplot(Train_copy, aes(fct_infreq(Home.Ownership)))+
+  geom_bar()+
+  labs(title = "Variable 'Home.Ownership'",
+       x = "Tipo de dueño",
+       y = "Frecuencia") +
+  theme_bw() +
+  # Agregar el número de observaciones al filo de cada barra
+  geom_text(stat = "count", aes(label = after_stat(format(count, big.mark = ","))), vjust = -0.5)
+```
+d. Purpose
+
+Quizás valdría la pena reducir grupos
+
+Por un lado, se unifica el valor de la variable "Other" y "other" en purpose con la funcion tolower(), y por otro, se valorará en el ajuste del modelo la reducción de dimensiones en Train_copy
+```{r}
+unique(Train_copy$Purpose)
+Train_copy$Purpose = tolower(Train_copy$Purpose)
+
+#unique(Train_copy$Purpose)
+```
+
+```{r}
+Train_copy$Purpose = as.factor(Train_copy$Purpose)
+
+
+ggplot(Train_copy, aes(fct_infreq(Purpose)))+
+  geom_bar(stat="count")+
+  labs(title = "Variable 'Purpose'",
+       x = "Proposito",
+       y = "Frecuencia") +
+  theme_bw() +
+  # Agregar el número de observaciones al filo de cada barra
+  geom_text(stat = "count", aes(label = after_stat(format(count, big.mark = ","))), size=2)+
+  coord_flip()
+
+#unique(Train_copy$Purpose)
+# # Cambiar "hombre" por 1 y "mujer" por 2
+# nuevo_vector <- ifelse(observaciones == "hombre", 1, ifelse(observaciones == "mujer", 2, observaciones))
+```
+
+
+
+#####   Análisis univariado y agrupación grafica de variables continuas
+
+Dado que son varias variables continuas y probablemente no tenga sentido meter todas en un solo gráfico de boxplot, buscamos rangos similares para segmentar en 2 o 3 grupos. Esto requiere inicialmente meter todas en un boxplot y manualmente separarlas
+
+
+```{r}
+Train_copy_continuas = Train_copy %>% dplyr::select(Current.Loan.Amount, Credit.Score, Annual.Income, Monthly.Debt, Years.of.Credit.History, Months.since.last.delinquent, Number.of.Open.Accounts, Current.Credit.Balance, Maximum.Open.Credit, Bankruptcies, Tax.Liens)
+
+```
+
+
+
+
+
+```{r}
+train_long_form = gather(dplyr::select(Train_copy_continuas, -c(Maximum.Open.Credit, Current.Loan.Amount, Annual.Income, Current.Credit.Balance, Monthly.Debt, Credit.Score, Bankruptcies, Tax.Liens)), key = "variable", value = "valor")
+
+ggplot(train_long_form, aes(y=variable, x=valor))+
+  geom_boxplot()+
+  # geom_jitter()+
+  stat_summary(fun=mean, colour="darkred", geom="point",
+               shape=18, size=3, show.legend=FALSE)+
+  scale_x_continuous(NULL)+
+  scale_y_discrete(NULL)+
+  theme_bw()
+```
+2do grupo :
+- Maximum.Open.Credit
+- Current.Loan.Amount
+- 
+
+```{r}
+
+# nrow(Train_copy_continuas)
+# df.temp = filter(Train_copy_continuas, Maximum.Open.Credit < 697531)
+# nrow(df.temp)
+```
+
+
+```{r}
+train_selected = dplyr::select(Train_copy_continuas, Maximum.Open.Credit, Current.Loan.Amount)
+train_long_form1 = gather(train_selected, key = "variable", value = "valor")
+
+ggplot(train_long_form1, aes(y=variable, x=valor))+
+  geom_boxplot()+
+  # geom_jitter()+
+  stat_summary(fun=mean, colour="darkred", geom="point",
+               shape=18, size=3, show.legend=FALSE)+
+  scale_x_continuous(NULL, breaks = c(0,  100000000, 200000000, 400000000, 600000000, 800000000),
+                     labels = c("0", "100M", "200M", "400M","600M", "800M"))+
+  scale_y_discrete(NULL)+
+  theme_bw()
+```
+Se sospecha visualmente que en Current.Loan.Amount existe un dato outlier muy marcado cercano a los 100M, pero dicho outlier, no solo es un dato sino que pertenece a un subconjunto que representa el 4to cuartil con 4712 obs (13.77% del total).
+
+Por lo tanto se vuelve caso de estudio análisar este subgrupo de outliers para evaluar la permanencia de estos registros en el ajuste del modelo.
+
+```{r}
+train_selected = dplyr::select(Train_copy_continuas, Current.Loan.Amount)
+train_long_form1 = gather(train_selected, key = "variable", value = "valor")
+
+ggplot(train_long_form1, aes(y=variable, x=valor))+
+  geom_boxplot()+
+  # geom_jitter()+
+  stat_summary(fun=mean, colour="darkred", geom="point",
+               shape=18, size=3, show.legend=FALSE)+
+  scale_x_continuous(NULL, breaks = c(0, 20000000, 40000000, 60000000, 80000000, 100000000),
+                     labels = c("0", "20M", "40M", "60M", "80M", "100M"))+
+  scale_y_discrete(NULL)+
+  theme_bw()
+```
+
+Visualizamos los cuartiles
+
+
+```{r}
+print("Primer cuartil")
+quantile(Train_copy_continuas$Current.Loan.Amount, 0.25)
+print("-----------")
+print("Segundo cuartil")
+quantile(Train_copy_continuas$Current.Loan.Amount, 0.5)
+print("-----------")
+quantile(Train_copy_continuas$Current.Loan.Amount, 0.75)
+print("Tercer cuartil")
+quantile(Train_copy_continuas$Current.Loan.Amount, 1)
+```
+
+En este punto cabe destacar que el 75% de los valores del vector Current.Loan.Amount son menores o iguales a 544016.2. 
+
+Dado que parece que los valores del cuarto cuartil son tan extremos para sugerirnos filtrarlos del estudio, pero en conteo representan 8,551 observaciones, se decide hacer un estudio de la distribución de los datos en el cuarto cuartil para evaluar si se pueden recuperar algunas observaciones. Es claro que un modelo no se va ajustar apropiadamente a registros con valores de cantidad de deuda actual de 500 mil y de 90 millones en una de las variables regresoras, y si se ajusta, no será el mejor modelo o la variable perdera significancia estadística en el modelo. 
+
+En el análisis del cuarto cuartil, que son valores mayores a 544016.2, se puede observar la siguiente distribución de los datos con ayuda de un gráfico de violin:
+
+```{r}
+df_temp = filter(Train_copy_continuas, Current.Loan.Amount > 544016.2 )
+ggplot(df_temp, aes(y=1,x=Current.Loan.Amount))+
+  geom_violin()+
+  scale_x_continuous(breaks = c(545000, 24500000, 76000000, 90000000),
+                     labels = c("0.545M", "24.5M", "76M", "90M"))+
+  scale_y_continuous(NULL, labels = NULL)+
+  ggtitle("Análisis del 4to cuartil de la variable Current.Loan.Amount (valores > 544,016.2)")+
+  theme_bw()
+```
+
+Se observa una distribución de datos que presenta un vacio entre 24.5M y 76M, también apreciable con un gráfico de densidad.
+
+```{r}
+df_temp = filter(Train_copy_continuas, Current.Loan.Amount > 544016.2 )
+ggplot(df_temp, aes(Current.Loan.Amount))+
+  geom_freqpoly()+
+  scale_x_continuous(breaks = c(545000, 24500000, 76000000, 90000000),
+                     labels = c("0.545M", "24.5M", "76M", "90M"))+
+  ggtitle("Análisis del 4to cuartil de la variable Current.Loan.Amount (valores > 544,016.2)")+
+  theme_bw()
+```
+
+
+Y dado que los valores de la izquierda de la curva bimodal no son tan extremos como los de la parte derecha, nos planteamos la idea de tomar los de la izquierda y filtrar los valores extremos de la derecha. Dichos valores de la curva izquierda bimodal toman la siguiente distribución, con valor mínimo de 544,016.2 y máximo de 24.5 M, como no lo indica la anterior gráfia, que en conteo son 3,839 observaciones y tienen la siguiente distribución.
+
+```{r}
+df_temp = filter(Train_copy_continuas, Current.Loan.Amount > 544016.2 )
+df_temp = filter(df_temp, Current.Loan.Amount < 24500000 )
+
+ggplot(df_temp, aes(y=1, x=Current.Loan.Amount))+
+  geom_violin()+
+  geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
+  geom_jitter(alpha=0.2)+
+  scale_y_continuous(NULL, labels = NULL)+
+  scale_x_continuous(breaks = c(550000, 600000, 650000, 700000, 750000, 800000),
+                     labels = c("550k", "600k", "650k", "700k", "750k", "800k"))+
+  ggtitle("Análisis del 4to cuartil de la variable Current.Loan.Amount (valores > 544,016.2)")+
+  theme_bw()
+```
+<!-- Estas ultimas 3 gráficas pueden ser acomodadas verticalmente en 3 filas -->
+
+
+Por lo que en conclusión, en el análisis univariado de la variable `Current.Loan.Amount` y al poder observar la cota superior aproximada a la que debemos delimitarla para restringir valores extremos, el modelo se ajustara con todas aquellas obervaciones que sean menores o iguales a 800,000 (por redondeo), que representaran un 86.2% de las obervaciones de esta variable y que adoptan la siguiente distribución.
+
+```{r}
+plot_1 = ggplot(filter(Train_copy_continuas, Current.Loan.Amount <= 80000000), aes(y=1, x=Current.Loan.Amount))+
+  geom_violin() +
+  geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
+  scale_y_continuous(NULL, labels = NULL)+
+  scale_x_continuous(breaks = c(0, 200000, 400000, 600000, 800000),
+                     labels = c("0", "200k", "400k", "600k", "800k"))+
+  ggtitle("Variable Current.Loan.Amount posterior al filtro (valores < 80M)")+
+  theme_bw()
+
+plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Current.Loan.Amount))+
+  geom_violin() +
+  geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
+  scale_y_continuous(NULL, labels = NULL)+
+  scale_x_continuous(breaks = c(0, 20000000, 40000000, 60000000, 80000000, 100000000),
+                     labels = c("0", "20M", "40M", "60M", "80M", "100M"))+
+  ggtitle("Variable Current.Loan.Amount previo al filtro")+
+  theme_bw()
+
+grid.arrange(plot_1, plot_2, ncol = 1)
+```
+
+Finalmente, se procede a recopilar los IDs de dichos registros para al finalizar el análisis exploratorio, hacer el filtro del dataset inicial ya que podría darse el caso que en otras variables se ajuste otro filtro.
+
+
+Por otro y sin ahonda mucho en la variable `Maximum.Open.Credit`, para eliminar valores extremos en el mismo sentido de la variable previa `Current.Loan.Amount` se establece la cota superior en `80M`. Esto bajo la lógica de que, si el tope máximo de la deuda actual es 80M es porque tienes un crédito otorgado máximo por esta cantidad. Este filtro posiblemente cambie en busqueda de un mejor ajuste del modelo, dado que el análisis de cuartiles nos indica que el 3er cuartil de `Maximum.Open.Credit` es un valor menor o igual a 697,531, sin embargo la lógica antes mencionada impera hasta este momento dle análisis.
+
+```{r}
+print("Primer cuartil")
+quantile(Train_copy_continuas$Maximum.Open.Credit, 0.25)
+print("-----------")
+print("Segundo cuartil")
+quantile(Train_copy_continuas$Maximum.Open.Credit, 0.5)
+print("-----------")
+quantile(Train_copy_continuas$Maximum.Open.Credit, 0.75)
+print("Tercer cuartil")
+quantile(Train_copy_continuas$Maximum.Open.Credit, 1)
+```
+
+
+3er grupo:
+- Annual.Income
+
+```{r}
+train_selected = dplyr::select(Train_copy_continuas, Annual.Income)
+train_long_form2 = gather(train_selected, key = "variable", value = "valor")
+
+ggplot(train_long_form2, aes(y=variable, x=valor))+
+  geom_boxplot()+
+  #geom_jitter(alpha=0.2)+ 
+  stat_summary(fun=mean, colour="darkred", geom="point",
+               shape=18, size=3, show.legend=FALSE)+
+  scale_y_discrete(name=NULL)+
+  scale_x_continuous(breaks = c(0, 10000000, 20000000, 30000000),
+                     labels = c("0", "10M", "20M", "30M"))+
+  theme_bw()
+```
+4to grupo:
+
+- Current.Credit.Balance
+
+```{r}
+train_selected = dplyr::select(Train_copy_continuas, Current.Credit.Balance)
+train_long_form3 = gather(train_selected, key = "variable", value = "valor")
+
+ggplot(train_long_form3, aes(y=variable, x=valor))+
+  geom_boxplot()+
+  # geom_jitter()+ 
+  stat_summary(fun=mean, colour="darkred", geom="point",
+               shape=18, size=3, show.legend=FALSE)+
+  scale_y_discrete(name=NULL)+
+  scale_x_continuous(breaks = c(0, 2000000, 4000000, 6000000),
+                     labels = c("0", "2M", "4M", "6M"))+
+  theme_bw()
+```
+5to grupo:
+
+- Monthly.Debt
+
+```{r}
+train_selected = dplyr::select(Train_copy_continuas, Monthly.Debt)
+train_long_form4 = gather(train_selected, key = "variable", value = "valor")
+
+ggplot(train_long_form4, aes(y=variable, x=valor))+
+  geom_boxplot()+
+  # geom_jitter()+ 
+  stat_summary(fun=mean, colour="darkred", geom="point",
+               shape=18, size=3, show.legend=FALSE)+
+  scale_y_discrete(name=NULL)+
+  scale_x_continuous(breaks = c(0, 50000, 100000, 150000, 200000),
+                     labels = c("0", "50K", "100K", "150K", "200K"))+
+  theme_bw()
+```
+6to grupo:
+- Credit.Score
+
+```{r}
+train_selected = dplyr::select(Train_copy_continuas, Credit.Score)
+train_long_form5 = gather(train_selected, key = "variable", value = "valor")
+
+ggplot(train_long_form5, aes(y=variable, x=valor))+
+  geom_boxplot()+
+  # geom_jitter()+ 
+  stat_summary(fun=mean, colour="darkred", geom="point",
+               shape=18, size=3, show.legend=FALSE)+
+  scale_y_discrete(name=NULL)+
+  theme_bw()
+# 
+# mean(Train_copy_continuas$Credit.Score)
+```
+
+
+
+
+
+Un análisis mediante un histógrama nos indica que se presenta un subgrupo de valores extremos mayores a 2mil en la variable `Credit.Score`
+```{r}
+ggplot(train_long_form5, aes(valor))+
+  geom_histogram(bins = 60)+
+  ggtitle("Histógrama Credit.Score")+
+  theme_bw()
+
+```
+La situación de la distribución de los valores parece ser un poco similar al caso de la variable `Current.Loan.Amount`, por lo que se buscara filtrar los registros de aquellas observaciones extremas para la variable Credit.Score en estudio. Cuando la media el score crediticio se encuentra en 1048.483, los valores de esta variable mayores a 5mil empiezan a perder mucho sentido, generandonos dudas sobre si estos datos se recopilaron apropiadamente o son inexactos como para ponerles un tope.
+
+
+Por un lado se análizan los cuartiles del vector y se elaboran dos gráficas de cajas y bigotes más una capa de violin, además de un histógrama: una para valores que se encuentre en el primer, segundo y tercer cuartil y otra para el cuarto cuartil.
+
+```{r}
+print("Primer cuartil")
+quantile(Train_copy_continuas$Credit.Score, 0.25)
+print("-----------")
+print("Segundo cuartil")
+quantile(Train_copy_continuas$Credit.Score, 0.5)
+print("-----------")
+quantile(Train_copy_continuas$Credit.Score, 0.75)
+print("Tercer cuartil")
+quantile(Train_copy_continuas$Credit.Score, 1)
+
+```
+
+```{r}
+train_selected = Train_copy_continuas %>% filter(Credit.Score <= 738) %>% dplyr::select(Credit.Score)
+
+train_long_form6 = gather(train_selected, key = "variable", value = "valor")
+
+ggplot(train_long_form6, aes(y=variable, x=valor))+
+  geom_violin() +
+  geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
+  # geom_jitter()+ 
+  stat_summary(fun=mean, colour="darkred", geom="point",
+               shape=18, size=3, show.legend=FALSE)+
+  scale_y_discrete(NULL)+
+  ggtitle(glue("Gráfico de Credit.Score <= 738 con {format(nrow(train_selected), big.mark=',')}"))+
+  theme_bw()
+```
+
+
+```{r}
+train_selected = Train_copy_continuas %>% filter(Credit.Score > 738) %>% dplyr::select(Credit.Score)
+
+train_long_form7 = gather(train_selected, key = "variable", value = "valor")
+
+ggplot(train_long_form7, aes(y=variable, x=valor))+
+  geom_violin() +
+  geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
+  # geom_jitter()+ 
+  stat_summary(fun=mean, colour="darkred", geom="point",
+               shape=18, size=3, show.legend=FALSE)+
+  scale_x_continuous(breaks = c(753, 1500, 3000, 4500, 6000, 7500))+
+  scale_y_discrete(NULL)+
+  ggtitle(glue("Gráfico de Credit.Score > 738 con {format(nrow(train_selected), big.mark=',')}"))+
+  theme_bw()
+```
+
+```{r}
+ggplot(train_long_form7, aes(valor))+
+  geom_histogram(bins = 60)+
+  ggtitle("Histógrama Credit.Score (> 738)")+
+  scale_x_continuous(NULL)+
+  theme_bw()
+```
+
+Con lo anterior, se decide filtrar todas aquellas observaciones mayores a 753, en donde ubicamos al valor 753 como el punto donde si se filtra los valores (que suponemos extremos en el vector) mayores a este, no se perderían tantas observaciones. De hecho toma sentido este subgrupo > 753 con un boxplot más violin con forma y sentido, pero se filtran dichas observaciones ya que el modelo no ajustaría apropiadamente para este subgrupo, y en proporción contra el total, un 5.25%, es desechable.
+
+```{r}
+train_selected = Train_copy_continuas %>% filter(Credit.Score > 753) %>% dplyr::select(Credit.Score)
+
+train_long_form7 = gather(train_selected, key = "variable", value = "valor")
+
+ggplot(train_long_form7, aes(y=variable, x=valor))+
+  geom_violin() +
+  geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
+  # geom_jitter()+ 
+  stat_summary(fun=mean, colour="darkred", geom="point",
+               shape=18, size=3, show.legend=FALSE)+
+  scale_x_continuous(breaks = c(753, 1500, 3000, 4500, 6000, 7500))+
+  scale_y_discrete(NULL)+
+  ggtitle(glue("Gráfico de Credit.Score > 753 con {format(nrow(train_selected), big.mark=',')} observaciones"))+
+  theme_bw()
+```
+
+```{r}
+
+train_selected = Train_copy_continuas %>% filter(Credit.Score <= 753) %>% dplyr::select(Credit.Score)
+train_long_form8 = gather(train_selected, key = "variable", value = "valor")
+
+plot_1 = ggplot(train_long_form8, aes(y=variable, x=valor))+
+  geom_violin() +
+  geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
+  # geom_jitter()+ 
+  stat_summary(fun=mean, colour="darkred", geom="point",
+               shape=18, size=3, show.legend=FALSE)+
+  scale_y_discrete(NULL)+
+  ggtitle(glue("Credit.Score posterior al filtro (valores menores o iguales a 753)"))+
+  theme_bw()
+
+train_selected = Train_copy_continuas %>% dplyr::select(Credit.Score)
+train_long_form9 = gather(train_selected, key = "variable", value = "valor")
+
+plot_2 = ggplot(train_long_form9, aes(y=variable, x=valor))+
+  geom_violin() +
+  geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
+  # geom_jitter()+ 
+  stat_summary(fun=mean, colour="darkred", geom="point",
+               shape=18, size=3, show.legend=FALSE)+
+  scale_y_discrete(NULL)+
+  ggtitle(glue("Credit.Score previo al filtro"))+
+  theme_bw()
+
+grid.arrange(plot_2, plot_1, ncol = 1)
+```
+
+
+7mo grupo:
+- Tax.Liens 
+- Bankruptcies
+```{r}
+train_selected = dplyr::select(Train_copy_continuas, Tax.Liens, Bankruptcies)
+train_long_form6 = gather(train_selected, key = "variable", value = "valor")
+
+ggplot(train_long_form6, aes(y=variable, x=valor))+
+  geom_boxplot()+
+  # geom_jitter()+ 
+  stat_summary(fun=mean, colour="darkred", geom="point",
+               shape=18, size=3, show.legend=FALSE)+
+  scale_y_discrete(NULL)+
+  theme_bw()
+```
+
+```{r, limpia de memoria 1}
+
+rm(train_long_form, train_long_form1, train_long_form2, train_long_form3, train_long_form4, train_long_form5, train_long_form6, train_long_form7, train_long_form8, train_long_form9)
+
+rm(df_temp, df_temp2, df_temp3, df.temp)
+rm(maximum_123,maximum_4)
+rm(plot_1, plot_2)
+rm(tc.copy, train_selected)
+```
+
+
+---- Eliminar valores de variables que a criterio no ayudaran en el ajuste del modelo ----
+
+
+```{r}
+# Es aquí donde Train_copy sufrira los primeros filtros
+
+Train_copy_1 = Train_copy %>% filter(Current.Loan.Amount <= 80000000, Credit.Score <= 753, Maximum.Open.Credit <= 80000000)
+
+print(glue("Train_copy en un inicio tuvó {format(nrow(Train_copy), big.mark = ',')} obs"))
+print(glue("Train_copy_1 ahora tiene {format(nrow(Train_copy_1), big.mark = ',')} obs"))
+print(glue("Se redujo el dataset en un {(1 - (nrow(Train_copy_1)/nrow(Train_copy)))*100 }%"))
+
+#(1 - (nrow(Train_copy_1)/nrow(Train_copy)))*100 
+```
+
+
+
+------------------ ANALISIS BIVARIADO--------------------------
+```{r}
+describe(Train_copy_1)
+```
+- probar graficas de multiples diferencias para evluar caracteristicas entre gupos
+
+
+
+##### Matriz de correlaciones e inferencia sobre ella
+
+```{r}
+
+Train_copy_1_continues = Train_copy_1 %>% dplyr::select(Current.Loan.Amount, Credit.Score, Annual.Income, Monthly.Debt, Years.of.Credit.History, Months.since.last.delinquent, Number.of.Open.Accounts, Current.Credit.Balance, Maximum.Open.Credit, Bankruptcies, Tax.Liens)
+
+chart.Correlation(dplyr::select(Train_copy_1_continues, -c(Tax.Liens)), histogram=TRUE, pch=19, main = "Matriz de correlaciones con histógrama")
+```
+Con el análisis de la matriz de correlación podríamos plantearnos las siguientes interacciones:
+
+- Current.Credit.Balance & Maximum.Open.Credit
+- Annual.Income & Monthly.Debt
+
+xray and Funnel chart
+```{r}
+
+# Train_copy_1 %>%  
+#   make_xray() %>% 
+#   view_xray()
+
+```
+
+```{r}
+# Train_copy_1 %>%  binarize()  %>%
+#   glimpse() %>%
+#   correlate(target = Loan.Status__1 ) %>%
+#   plot_correlation_funnel()
+
+```
+```{r}
+# Train_copy_1 %>%  binarize()  %>%  
+#   glimpse() %>% 
+#   correlate(target = Loan.Status__0 ) %>% 
+#   plot_correlation_funnel()
+```
+
+
+##### Análisis bivariado
+
+- Exploratorio bivariado (shiny app)
+
+```{r}
+
+# explore(Train_copy_1)
+
+# Train %>% describe_cat(Current.Loan.Amount)
+```
+A resaltar que:
+
+
+
+
+
+EN EL PERIODO DEL CREDITO
+- Son más los clientes que solicitan un crédito a corto plazo (70%) que los que solicitan a LP (30%)
+- Aquellos clientes con default son el grupo predominante en el gpo de clientes que solicitaron un  crédito a largo plazo
+- La mediana del current loan es más alta para clientes con creditos CP que a LP, corroborar la media porque se notan outliers altos en CP.
+- Son más los clientes con una hipóteca que piden crédito a LP que a CP, que los clientes que rentan su vivienda con créditos a CP que a LP. (variacion > 10%)
+- La media de la deuda actual del cliente es mayor para los clientes que solicitan un crédito a LP, que uno a CP, lo cual tiene logica de negocio.
+- La media del credit score es mayor para los clientes que solicitan crédito a CP que a LP.
+
+
+EN LOS AÑOS DE TRABAJO DEL CLIENTE:
+- El grupo que predomina es el de > 10 años de trabajo con un 35%, seguido de 2 años con un 8.5% 
+
+
+EN EL DUEÑO DE LA VIVIENDA:
+- Destaca el grupo de clientes con hipóteca con un 51%, seguido de Renta con un 39% y solo casa propia con un 9%
+- Hay dos factores que se podrían unificar: have mortgage & home mortgage, aunque la prop del primeor es de 0.2% por lo que no vale la pena
+
+EN EL PROPOSITO DEL CRÉDITO:
+- Destaca con un 73% el proposito de consolidación de la deuda como proposito declarado. 
+
+EN LAS BANCARROTAS:
+- El 65% de los clientes declara nunca haber caído en bancarrota, le sigue el 25% con al menos una bancarrota.
+- El grupo, por proposito del crédito, que predomina en una bancarrota declarada es aquel grupo que declara solicitar el crédito para "moving"
+
+EN LA DEUDA ACTUAL DEL CLIENTE:
+- La mediana de la deuda tiene una relación negativa con el aumento en el credit scoring, a mayor credit score menor es la mediana (falta corroborar la media dado outliers en altos credit scores)
+- la mediana sigue una relacion positiva con el ingreso anual (corroborar media)
+- la mediana sigue una relacion positiva con la deuda mensual (corroborar media)
+- la mediana sigue una relacion positiva con el balance crediticio (corroborar media)
+
+EN LOS AÑOS DE HISTORIAL CREDITICIO:
+
+- La mediana de los años mantiene una relacion positiva con el balance crediticio
+
+EN EL BALANCE ACTUAL DEL CREDITO:
+- La mediana del balance mantiene una relacion positiva con el maximo de creditos abiertos.
+
+EN EL NUMERO DE BANCARROTAS:
+
+- La mediana del numero máximo de creditos abiertos se relaciona negativamente con el número de bancarrotas. Entre más bancarrotas es menor el numero de créditos abiertos.
+
+
+##### Análisis multivariado
+
+
+
+```{r}
+
+```
+
+
+### Ajuste del modelo de regresión logística
+
+------- AJUSTE INICIAL DE UN MODELO SIMPLE PARA LA INTERPRETACIÓN DE LOS ODDS Y LOS ODDS RATIOS-----
+
+
+##### Interpretación de los ODDS y los ODDS Ratios mediante ajuste de modelos simples de prueba
+
+```{r}
+####### GRAFICA DE LA OPCION BINOMINAL CON AJUSTE DE MODELO GLM
+ggplot(Train_copy_1, aes(x=Credit.Score, y=Loan.Status)) +
+  geom_jitter(height = .02, width = 0, alpha = 0.3) +
+  theme_bw()
+
+ggplot(Train_copy_1, aes(x=Annual.Income, y=Loan.Status)) +
+  geom_jitter(height = .02, width = 0, alpha = 0.3) +
+  theme_bw()
+
+ggplot(Train_copy_1, aes(x=Years.of.Credit.History, y=Loan.Status)) +
+  geom_jitter(height = .02, width = 0, alpha = 0.3) +
+  theme_bw()
+
+### METER EN UN GRID VERTICAL
+```
+
+Inicialmente ajustamos dos modelos logit simples, es decir con solo una variable independiente en estudio. Para este caso primero analizaremos e interpretaremos la razón de momios o el odd ratio entre el modelo `Loan.Status` ~ `Credit.Score`, y repetiremos ese mismo ejercicio pero para `Loan.Status` ~`Annual.Income`, y `Loan.Status` ~`Years.of.Credit.History`.
+
+- Iteración `Loan.Status` ~ `Credit.Score`
+```{r}
+# AJUSTE DEL MODELO SIMPLE (Loan.Status & Credit.Score)
+modelo_simple_1 = glm(data = Train_copy_1, 
+            formula = Loan.Status~Credit.Score,
+            family = "binomial")
+summary(modelo_simple_1)
+print("Coeficientes como exponencial del num de euler")
+exp(modelo_simple_1$coefficients)
+```
+Del modelo de regresión logistica `Loan.Status` ~ `Credit.Score` interpretamos que:
+- la independiente es estadisticamente signficante dentro del modelo para explicar `Loan.Status`.
+- El logaritmo del odd (probabilidad de exito sobre la probabilidad de fracaso) para `Credit.Score` es cercano a cero pero no igual a cero (0.0068726).
+- El odd ratio del `Credit.Score` $e^{0.0068726}$ es igual a $1.00689627$.
+
+De lo que podemos concluir que con un aumento en una unidad del Credit.Score es en un 0.6% más probable que se de un 1 que un 0, donde 1 es `Fully Paid` y 0 es `Charged Off`.
+
+(es aquí donde se hacen las apuestas de 4 a 1 por ejemplo, cuando el OR es 4.00)
+
+
+- Iteración `Loan.Status` ~ `Annual.Income`
+
+```{r}
+# AJUSTE DEL MODELO SIMPLE (Loan.Status & Annual.Income)
+modelo_simple_2 = glm(data = Train_copy_1, 
+            formula = Loan.Status~Annual.Income,
+            family = "binomial")
+summary(modelo_simple_2)
+print("Coeficientes como exponencial del num de euler")
+exp(modelo_simple_2$coefficients)
+```
+
+Del modelo de regresión logistica `Loan.Status` ~ `Annual.Income` interpretamos que:
+- la independiente es estadisticamente signficante dentro del modelo para explicar `Loan.Status`.
+- El logaritmo del odd (probabilidad de exito sobre la probabilidad de fracaso) para `Credit.Score` es 0, por lo que el odd ratio será igual a 1 ($e^{0} =1$), interpretando que un aumento o disminución en `Annual.Income` no explica ninguna razón de cambio en `Loan.Status`
+
+Por lo que podríamos valorar eliminar dicha variable del modelo, pero ¿ entonces por qué resulta ser estadísticamente significativa en un inicio?
+
+<!-- (es aquí donde se hacen las apuestas de 4 a 1 por ejemplo, cuando el OR es 4.00) -->
+
+
+
+```{r}
+# AJUSTE DEL MODELO SIMPLE (Loan.Status & umber.of.Credit.Problems)
+modelo_simple_3 = glm(data = Train_copy_1, 
+            formula = Loan.Status~Years.of.Credit.History,
+            family = "binomial")
+summary(modelo_simple_3)
+print("Coeficientes como exponencial del num de euler")
+exp(modelo_simple_3$coefficients)
+```
+Del modelo de regresión logistica `Loan.Status` ~ `Years.of.Credit.History` interpretamos que:
+- la independiente es estadisticamente signficante dentro del modelo para explicar `Loan.Status`.
+- El logaritmo del odd (probabilidad de exito sobre la probabilidad de fracaso) para `Years.of.Credit.History` es diferente a cero (0.010485).
+- El odd ratio del `Credit.Score` $e^{0.010485}$ es igual a $1.010540$.
+
+De lo que podemos concluir que con un aumento en una unidad de la variable `Years.of.Credit.History` es en un 1.05% más probable que se de un 1 que un 0, donde 1 es `Fully Paid` y 0 es `Charged Off`.
+
+
+##### Ajuste del modelo de regresión logística (modelo 1)
+
+--------------- AJUSTE DEL MODELO DE REGRESION LOGISTICA MULTIPLE -------------------
+
+
+```{r}
+Train_copy_1_model = dplyr::select(Train_copy_1, -c(ID))
+
+```
+
+
+Metemos todos los balones en una canasta y posteriormente sacamos los que no ajusten en el modelo
+
+```{r}
+modelo_multiple_1 = glm(data = Train_copy_1_model, 
+              formula = Loan.Status~., family = "binomial")
+summary(modelo_multiple_1)
+```
+```{r}
+anova(modelo_multiple_1)
+```
+
+
+Dado que no resultan significantes, estas variables se eliminan del modelo:
+
+Home.OwnershipHome
+Number.of.Open.Accounts
+Current.Credit.Balance 
+Maximum.Open.Credit
+Tax.Liens
+ID
+
+
+##### Modelo 1 con Ajuste no.1
+```{r}
+modelo_multiple_1 = update(object = modelo_multiple_1, formula. = .~.-Home.Ownership -Number.of.Open.Accounts -Current.Credit.Balance -Maximum.Open.Credit -Tax.Liens -Months.since.last.delinquent)
+summary(modelo_multiple_1)
+```
+
+
+##### Intervalos de confianza del Ajuste no.1
+```{r}
+confint(object = modelo_multiple_1, level = 0.95)
+```
+
+
+
+##### Ecuación
+- Identificando la ecuación
+
+
+```{r}
+# Obtener el vector de coeficientes del modelo
+coeficientes <- coef(modelo_multiple_1)
+
+# Obtener los nombres de las variables del modelo
+nombres_vars <- names(coeficientes)[-1]
+
+# Crear una cadena con la ecuación del modelo
+cadena_ecuacion <- paste(round(coeficientes[1], 4), "+",
+                         paste(round(coeficientes[-1], 4), nombres_vars, sep = "*"), collapse = " + ")
+
+# Imprimir la ecuación del modelo
+cat("La ecuación del modelo es:\n", cadena_ecuacion, "\n")
+```
+
+
+- Identificando los coeficientes
+
+```{r}
+nombres_vars = names(coef(modelo_multiple_1))
+resumen = summary(modelo_multiple_1)
+
+# Iterar por cada variable e imprimir su nombre y coeficiente
+for (i in seq_along(nombres_vars)) {
+  cat(paste(nombres_vars[i], ": ", resumen$coefficients[i, "Estimate"], "\n"))
+}
+```
+
+##### ODDS Ratios del ajuste no.1
+- Identificando los odds ratios 
+$e^{B_{k}}$
+
+
+```{r}
+nombres_vars = names(coef(modelo_multiple_1))
+resumen = summary(modelo_multiple_1)
+
+# Iterar por cada variable e imprimir su nombre y el num de euler elevado al coeficiente
+for (i in seq_along(nombres_vars)) {
+  cat(paste(nombres_vars[i], ": ", exp(resumen$coefficients[i, "Estimate"]), "\n"))
+}
+```
+
+
+
+##### Predicción y Matriz de confusión para el modelo no. 1
+
+- Predicción
+
+Estableciendo una predicción con punto de corte arbitrario de 0.85
+```{r}
+prediccion_1 = predict(object = modelo_multiple_1,
+                    newdata = Train_copy_1_model, type = "response")
+
+Prediccion_1<-as.factor(ifelse(prediccion_1<=0.85,yes = 1, no = 0))
+
+table(Prediccion_1)
+
+print("Valores reales")
+table(Train_copy_1_model$Loan.Status)
+```
+
+- Matriz de confusión con punto de corte de 0.85 (arbitrario)
+```{r}
+confusionMatrix(reference = as.factor(Train_copy_1_model$Loan.Status), Prediccion_1)
+#confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), 
+#                             Prediccion)
+```
+
+##### Modelo optimizado con el punto máximo de la curva de exactitud (punto de corte ideal)
+
+```{r}
+Exactitud_1 <- vector()
+Corte_1 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_1)) {
+  Prediccion <- as.factor(ifelse(prediccion_1 <= Corte_1[i], yes = 1, no = 0))
+  
+  Exactitud_1[i] <- tryCatch(
+    {
+      confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), Prediccion)$overall[1]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado que desees asignar
+    }
+  )
+}
+
+plot(x=Corte_1, y = Exactitud_1, type = "l", main ="Punto de corte óptimo", xlab="Corte", ylab="Exactitud")
+```
+- ubicando tal punto de corte óptimo
+
+```{r}
+corte_optimo_1 = which(Exactitud_1==max(Exactitud_1))
+Corte_1[corte_optimo_1]
+```
+##### Predicción y matriz de confusión para el modelo no. 1 ajustado con punto de corte optimo
+
+- Generando una nueva predicción con el punto de corte óptimo para el modelo ajustado
+```{r}
+
+Prediccion_1_2<-as.factor(ifelse(prediccion_1<=Corte_1[corte_optimo_1],yes = 1, no = 0))
+confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), 
+                             Prediccion_1_2)
+```
+
+```{r}
+table(Train_copy_1_model$Loan.Status)
+table(Prediccion_1_2)
+```
+##### Curva ROC modelo ajustado no.1
+
+```{r}
+##### Comparar modelo ya ajustado (no.1) con uno nuevo y muy simple
+Prediccion_1_roc<-predict(object = modelo_multiple_1,
+                    newdata = Train_copy_1_model, type = "response", 
+                    se.fit = T)
+
+predicciones_roc<-prediction(Prediccion_1_roc$fit,Train_copy_1$Loan.Status)
+Desempeno_roc_1<-performance(predicciones_roc,'tpr','fpr')
+
+## Cgenerando nuevo modelo simple
+modelo_simple_4 <- glm(data = Train_copy_1, 
+              formula = Loan.Status~Purpose+Bankruptcies, family = "binomial")
+
+Prediccion_3_simple<-predict(object = modelo_simple_4,
+                    newdata = Train_copy_1_model, type = "response", 
+                    se.fit = T)
+
+predicciones3_simple<-prediction(Prediccion_3_simple$fit,Train_copy_1_model$Loan.Status)
+Desempeno3_simple<-performance(predicciones3_simple,'tpr','fpr')
+
+#ejecutar en conjunto
+plot(Desempeno_roc_1,col="firebrick")
+plot(Desempeno3_simple, col = "darkgreen", add = T)
+```
+
+El primer modelo ajustado, aunque en la matriz de confusion arroja un 80% de accuracy, apenas es mejor que uno simple.
+- hay que estudiar cómo se compone una matriz de confusión para ver en que apartados puede estar fallando.
+
+
+##### Cumplimiento de los supuestos del modelo de regresion logistica
+
+- Multicolinealidad (Factor de inflación de la varianza o VIF)
+
+Multicolinealidad: se requiere de muy poca a ninguna multicolinealidad entre los predictores (para regresión logística múltiple).
+
+```{r}
+vif(modelo_multiple_1)
+vif_modelo <- vif(modelo_multiple_1)
+
+datos_vif <- data.frame(VIF = vif_modelo)
+ggplot(datos_vif, aes(x = row.names(datos_vif), y = VIF.GVIF)) +
+  geom_bar(stat = "identity", fill = "blue", width = 0.5) +
+  coord_flip() +
+  ggtitle("Valores de VIF para cada variable del modelo") +
+  xlab("Variables del modelo") +
+  ylab("Valor de VIF")
+```
+
+
+
+
+- Respuesta binaria: La variable dependiente ha de ser binaria.
+Se satisface
+
+- Independencia: las observaciones han de ser independientes.
+
+
+- Linealidad entre la variable independiente y el logaritmo natural de odds.
+
+
+
+
+### Selección de variables
+##### Ajuste del modelo de regresión logística (modelo 2 con seleccion de variables)
+
+
+Selección de variables por medio de stepwise & estadístico Cp de mallow
+```{r}
+Variables = colnames(Train_copy_1_model)
+##***Exhaustivo
+Subs<-regsubsets(data = Train_copy_1_model, x = Loan.Status~., nbest=5, 
+                 method = "exhaustive")#intensivo
+```
+
+
+De acuerdo con los estadísticos recomendados para el conocimiento del modelo, ¿cuántas variables deberiamos de tener en el el modelo y qué variables?
+
+```{r}
+reg_summary = summary(Subs)
+
+# Set up a 2x2 grid so we can look at 4 plots at once
+par(mfrow = c(2,2))
+plot(reg_summary$rss, xlab = "Number of Variables", ylab = "RSS", type = "l")
+plot(reg_summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted RSq", type = "l")
+
+# We will now plot a red dot to indicate the model with the largest adjusted R^2 statistic.
+# The which.max() function can be used to identify the location of the maximum point of a vector
+adj_r2_max = which.max(reg_summary$adjr2) # 11
+
+# The points() command works like the plot() command, except that it puts points 
+# on a plot that has already been created instead of creating a new plot
+points(adj_r2_max, reg_summary$adjr2[adj_r2_max], col ="red", cex = 2, pch = 20)
+
+# We'll do the same for C_p and BIC, this time looking for the models with the SMALLEST statistic
+plot(reg_summary$cp, xlab = "Number of Variables", ylab = "Cp", type = "l")
+cp_min = which.min(reg_summary$cp) # 10
+points(cp_min, reg_summary$cp[cp_min], col = "red", cex = 2, pch = 20)
+
+plot(reg_summary$bic, xlab = "Number of Variables", ylab = "BIC", type = "l")
+bic_min = which.min(reg_summary$bic) # 6
+points(bic_min, reg_summary$bic[bic_min], col = "red", cex = 2, pch = 20)
+```
+Es decir que de cada variable nominal u ordinal, ¿no todas se estarían seleccionando?
+
+Selección y ajuste de modelo por el estadístico cp de mallow
+
+```{r}
+plot(Subs, scale = c( "Cp"), main="Cp de Mallow")#Cp de mallow
+```
+
+```{r}
+coef(Subs, 11)
+```
+
+<!-- ######  Ajustando el modelo propuesto por el cp de mallow  -->
+```{r}
+modelo_multiple_2 = glm(data = Train_copy_1_model, 
+              formula = Loan.Status~Term+Home.Ownership+Purpose+Current.Loan.Amount+
+                Credit.Score+Annual.Income+Monthly.Debt, family = "binomial")
+summary(modelo_multiple_2)
+#Parece que homme ownership rent que es la unica significativa para la cualitativa home ownership, es representada en el intercepto
+```
+
+
+El modelo multiple 2 presenta un AIC menor que el modelo no. 1 (26494.82 vs 26517.4)
+
+```{r}
+modelo_multiple_2$aic
+```
+
+
+
+######   Identificando intervalos de confianza  y  coeficientes para el modelo no. 2
+```{r}
+confint(object = modelo_multiple_2, level = 0.95)
+```
+
+- Ecuación para el modelo no. 2
+
+
+```{r}
+# Obtener el vector de coeficientes del modelo
+coeficientes <- coef(modelo_multiple_2)
+
+# Obtener los nombres de las variables del modelo
+nombres_vars <- names(coeficientes)[-1]
+
+# Crear una cadena con la ecuación del modelo
+cadena_ecuacion <- paste(round(coeficientes[1], 4), "+",
+                         paste(round(coeficientes[-1], 4), nombres_vars, sep = "*"), collapse = " + ")
+
+# Imprimir la ecuación del modelo
+cat("La ecuación del modelo es:\n", cadena_ecuacion, "\n")
+```
+
+
+###### Ecuación para el modelo no. 2
+
+
+```{r}
+# Obtener el vector de coeficientes del modelo
+coeficientes <- coef(modelo_multiple_2)
+
+# Obtener los nombres de las variables del modelo
+nombres_vars <- names(coeficientes)[-1]
+
+# Crear una cadena con la ecuación del modelo
+cadena_ecuacion <- paste(round(coeficientes[1], 4), "+",
+                         paste(round(coeficientes[-1], 4), nombres_vars, sep = "*"), collapse = " + ")
+
+# Imprimir la ecuación del modelo
+cat("La ecuación del modelo es:\n", cadena_ecuacion, "\n")
+```
+
+###### Identificando los coeficientes para el modelo no. 2
+ 
+```{r}
+nombres_vars = names(coef(modelo_multiple_2))
+resumen = summary(modelo_multiple_2)
+
+# Iterar por cada variable e imprimir su nombre y coeficiente
+for (i in seq_along(nombres_vars)) {
+  cat(paste(nombres_vars[i], ": ", resumen$coefficients[i, "Estimate"], "\n"))
+}
+```
+
+###### ODDS Ratios para el modelo no. 2
+- Identificando los odds ratios 
+$e^{B_{k}}$
+
+
+```{r}
+nombres_vars = names(coef(modelo_multiple_2))
+resumen = summary(modelo_multiple_2)
+
+# Iterar por cada variable e imprimir su nombre y el num de euler elevado al coeficiente
+for (i in seq_along(nombres_vars)) {
+  cat(paste(nombres_vars[i], ": ", exp(resumen$coefficients[i, "Estimate"]), "\n"))
+}
+```
+
+
+
+###### Predicción y Matriz de confusión para el modelo no. 2
+
+- Predicción
+
+Estableciendo una predicción con punto de corte arbitrario de 0.85
+```{r}
+prediccion_2 = predict(object = modelo_multiple_2,
+                    newdata = Train_copy_1_model, type = "response")
+
+
+Prediccion_2<-as.factor(ifelse(prediccion_2<=0.85,yes = 1, no = 0))
+
+table(Prediccion_2)
+
+print("Valores reales")
+table(Train_copy_1_model$Loan.Status)
+```
+
+
+- Matriz de confusión para el modelo 1 plus con punto de corte de 0.85 (arbitrario)
+```{r}
+confusionMatrix(reference = as.factor(Train_copy_1_model$Loan.Status), Prediccion_2)
+
+```
+
+######  Modelo optimizado con el punto máximo de la curva de exactitud 
+
+
+- punto de corte ideal para maximizar el accuracy
+
+```{r}
+Exactitud_2 <- vector()
+Corte_2 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_2)) {
+  Prediccion <- as.factor(ifelse(prediccion_2 <= Corte_2[i], yes = 1, no = 0))
+  
+  Exactitud_2[i] <- tryCatch(
+    {
+      confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), Prediccion)$overall[1]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado
+    }
+  )
+}
+
+plot(x=Corte_2, y = Exactitud_2, type = "l", main ="Punto de corte óptimo", xlab="Corte", ylab="Exactitud")
+```
+- ubicando tal punto de corte óptimo para maximizar el accuracy
+
+```{r}
+corte_optimo_2 = which(Exactitud_2==max(Exactitud_2))
+Corte_2[corte_optimo_2]
+```
+- punto de corte ideal para maximizar la sensibilidad
+
+```{r}
+Exactitud_2 <- vector()
+Corte_2 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_2)) {
+  Prediccion <- as.factor(ifelse(prediccion_2 <= Corte_2[i], yes = 1, no = 0))
+  
+  Exactitud_2[i] <- tryCatch(
+    {
+      confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), Prediccion)$byClass[1]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado
+    }
+  )
+}
+
+plot(x=Corte_2, y = Exactitud_2, type = "l", main ="Punto de corte óptimo para la sensibilidad", xlab="Corte", ylab="Exactitud")
+```
+- ubicando tal punto de corte óptimo para maximizar la sensibilidad
+
+```{r}
+corte_optimo_2 = which(Exactitud_2==max(Exactitud_2))
+Corte_2[corte_optimo_2]
+```
+
+- punto de corte ideal para maximizar la especificidad
+
+```{r}
+Exactitud_2 <- vector()
+Corte_2 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_2)) {
+  Prediccion <- as.factor(ifelse(prediccion_2 <= Corte_2[i], yes = 1, no = 0))
+  
+  Exactitud_2[i] <- tryCatch(
+    {
+      confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), Prediccion)$byClass[2]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado
+    }
+  )
+}
+
+plot(x=Corte_2, y = Exactitud_2, type = "l", main ="Punto de corte óptimo para la especificidad", xlab="Corte", ylab="Exactitud")
+```
+- ubicando tal punto de corte óptimo para maximizar el especificidad
+
+```{r}
+corte_optimo_2 = which(Exactitud_2==max(Exactitud_2))
+Corte_2[corte_optimo_2]
+```
+
+
+
+###### Predicción y matriz de confusión para el modelo no. 2 con punto de corte optimo empleado
+
+- Generando una nueva predicción con el punto de corte óptimo para el modelo ajustado
+```{r}
+
+Prediccion_2_1<-as.factor(ifelse(prediccion_2<=Corte_2[corte_optimo_2],yes = 1, no = 0))
+confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), 
+                             Prediccion_2_1)
+
+```
+Estudiando el objeto matriz de confusión
+
+```{r}
+names(confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), 
+                             Prediccion_2_1))
+
+confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), 
+                             Prediccion_2_1)$byClass
+```
+
+
+
+```{r}
+
+Prediccion_2_1<-as.factor(ifelse(prediccion_2<=0.44,yes = 1, no = 0))
+confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), 
+                             Prediccion_2_1)
+```
+
+
+```{r}
+table(Train$Loan.Status)
+```
+######  Curva ROC modelo 2
+
+```{r}
+##### Comparar modelo ya ajustado (no.1) con uno nuevo y muy simple
+Prediccion_2_roc<-predict(object = modelo_multiple_2,
+                    newdata = Train_copy_1_model, type = "response", 
+                    se.fit = T)
+
+predicciones_roc_2=prediction(Prediccion_2_roc$fit,Train_copy_1$Loan.Status)
+Desempeno_roc_2<-performance(predicciones_roc_2,'tpr','fpr')
+
+## Cgenerando nuevo modelo simple
+modelo_simple_4 <- glm(data = Train_copy_1, 
+              formula = Loan.Status~Purpose+Bankruptcies, family = "binomial")
+
+Prediccion_3_simple<-predict(object = modelo_simple_4,
+                    newdata = Train_copy_1_model, type = "response", 
+                    se.fit = T)
+
+predicciones3_simple<-prediction(Prediccion_3_simple$fit,Train_copy_1_model$Loan.Status)
+Desempeno3_simple<-performance(predicciones3_simple,'tpr','fpr')
+
+#ejecutar en conjunto
+plot(Desempeno_roc_2,col="firebrick")
+plot(Desempeno3_simple, col = "darkgreen", add = T)
+```
+
+<!-- Aunque el accuracy del modelo no.2 bajo en un 0.01 punto, preferimos un modelo más ligero y más manejable, por lo que nos quedamos con este último modelo. -->
+
+
+##### Ajuste del modelo de regresión logística (modelo 3 con seleccion de variables por PRESS)
+
+- Se decide ajustar un 3er modelo pero en esta ocasión ajustandolo por el estadístico PRESS. Lo anterior con la finalidad de comparar los tres modelos ajustados y quedarnos con el de mejor desempeño para la predicción y clásifiación de nuevas obervaciones.
+
+Empleando el PRESS (predicted residual error sum of squares) como selector
+```{r}
+
+# Crear una matriz de diseño con todas las variables independientes
+x <- model.matrix(modelo_multiple_1)[,-1]
+y <- Train_copy_1_model$Loan.Status
+
+# Buscar el mejor subconjunto de predictores utilizando PRESS
+press.regsubsets <- regsubsets(x, y, nvmax = ncol(x), method = "exhaustive", criterion = "press")
+summary(press.regsubsets)
+```
+
+Los resultados arrojan que entre menos variables predictoras menor será el PRESS 
+
+```{r}
+nvmax <- dim(x)[2]
+plot(1:nvmax, press.regsubsets$press, type = "b", xlab = "Number of Variables", ylab = "PRESS", pch = 19)
+
+min.press <- which.min(press.regsubsets$press)
+abline(v = min.press, lty = 2)
+```
+```{r}
+coef(press.regsubsets, id = 3)
+```
+De esta forma, procedemos a ajustar un modelo con solo 3 variables predictoras (Term, Credit.Score, Annual.Income )
+
+```{r}
+modelo_multiple_3 = glm(data = Train_copy_1_model, 
+              formula = Loan.Status~Term + Credit.Score + Annual.Income, family = "binomial")
+summary(modelo_multiple_3)
+```
+
+
+El modelo multiple 2 presenta un AIC menor que el modelo no. 1 (26494.82 vs 26517.4)
+
+```{r}
+modelo_multiple_3$aic
+```
+La diferencia entre el AIC del modelo 2 y el 3 es 163.02 (26657.84-26494.82)
+
+
+######   Identificando intervalos de confianza  y  coeficientes para el modelo no. 3
+```{r}
+confint(object = modelo_multiple_3, level = 0.95)
+```
+
+- Ecuación para el modelo no. 3
+
+
+```{r}
+# Obtener el vector de coeficientes del modelo
+coeficientes <- coef(modelo_multiple_3)
+
+# Obtener los nombres de las variables del modelo
+nombres_vars <- names(coeficientes)[-1]
+
+# Crear una cadena con la ecuación del modelo
+cadena_ecuacion <- paste(round(coeficientes[1], 4), "+",
+                         paste(round(coeficientes[-1], 4), nombres_vars, sep = "*"), collapse = " + ")
+
+# Imprimir la ecuación del modelo
+cat("La ecuación del modelo es:\n", cadena_ecuacion, "\n")
+```
+la beta del Anual.income es cero?
+
+###### Ecuación para el modelo no. 3
+
+
+```{r}
+# Obtener el vector de coeficientes del modelo
+coeficientes <- coef(modelo_multiple_3)
+
+# Obtener los nombres de las variables del modelo
+nombres_vars <- names(coeficientes)[-1]
+
+# Crear una cadena con la ecuación del modelo
+cadena_ecuacion <- paste(round(coeficientes[1], 4), "+",
+                         paste(round(coeficientes[-1], 4), nombres_vars, sep = "*"), collapse = " + ")
+
+# Imprimir la ecuación del modelo
+cat("La ecuación del modelo es:\n", cadena_ecuacion, "\n")
+```
+
+###### Identificando los coeficientes para el modelo no. 3
+ 
+```{r}
+nombres_vars = names(coef(modelo_multiple_3))
+resumen = summary(modelo_multiple_3)
+
+# Iterar por cada variable e imprimir su nombre y coeficiente
+for (i in seq_along(nombres_vars)) {
+  cat(paste(nombres_vars[i], ": ", resumen$coefficients[i, "Estimate"], "\n"))
+}
+```
+
+###### ODDS Ratios para el modelo no. 3
+- Identificando los odds ratios 
+$e^{B_{k}}$
+
+
+```{r}
+nombres_vars = names(coef(modelo_multiple_3))
+resumen = summary(modelo_multiple_3)
+
+# Iterar por cada variable e imprimir su nombre y el num de euler elevado al coeficiente
+for (i in seq_along(nombres_vars)) {
+  cat(paste(nombres_vars[i], ": ", exp(resumen$coefficients[i, "Estimate"]), "\n"))
+}
+```
+
+
+
+###### Predicción y Matriz de confusión para el modelo no. 3
+
+- Predicción
+
+Estableciendo una predicción con punto de corte arbitrario de 0.85
+```{r}
+prediccion_3 = predict(object = modelo_multiple_3,
+                    newdata = Train_copy_1_model, type = "response")
+
+
+Prediccion_3<-as.factor(ifelse(prediccion_3<=0.85,yes = 1, no = 0))
+
+table(Prediccion_3)
+
+print("Valores reales")
+table(Train_copy_1_model$Loan.Status)
+```
+- Matriz de confusión para el modelo 1 plus con punto de corte de 0.85 (arbitrario)
+```{r}
+confusionMatrix(reference = as.factor(Train_copy_1_model$Loan.Status), Prediccion_3)
+
+```
+
+######  Modelo optimizado con el punto máximo de la curva de exactitud 
+
+
+- punto de corte ideal para maximizar el accuracy
+
+```{r}
+Exactitud_3 <- vector()
+Corte_3 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_2)) {
+  Prediccion <- as.factor(ifelse(prediccion_2 <= Corte_2[i], yes = 1, no = 0))
+  
+  Exactitud_3[i] <- tryCatch(
+    {
+      confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), Prediccion)$overall[1]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado
+    }
+  )
+}
+
+plot(x=Corte_3, y = Exactitud_3, type = "l", main ="Punto de corte óptimo", xlab="Corte", ylab="Exactitud")
+```
+- ubicando tal punto de corte óptimo para maximizar el accuracy
+
+```{r}
+corte_optimo_3 = which(Exactitud_3==max(Exactitud_3))
+Corte_3[corte_optimo_3]
+```
+- punto de corte ideal para maximizar la sensibilidad
+
+```{r}
+Exactitud_3 <- vector()
+Corte_3 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_2)) {
+  Prediccion <- as.factor(ifelse(prediccion_3 <= Corte_2[i], yes = 1, no = 0))
+  
+  Exactitud_3[i] <- tryCatch(
+    {
+      confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), Prediccion)$byClass[1]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado
+    }
+  )
+}
+
+plot(x=Corte_3, y = Exactitud_3, type = "l", main ="Punto de corte óptimo para la sensibilidad", xlab="Corte", ylab="Exactitud")
+```
+- ubicando tal punto de corte óptimo para maximizar la sensibilidad
+
+```{r}
+corte_optimo_3 = which(Exactitud_3==max(Exactitud_3))
+Corte_3[corte_optimo_3]
+```
+
+- punto de corte ideal para maximizar la especificidad
+
+```{r}
+Exactitud_3 <- vector()
+Corte_3 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_2)) {
+  Prediccion <- as.factor(ifelse(prediccion_3 <= Corte_3[i], yes = 1, no = 0))
+  
+  Exactitud_3[i] <- tryCatch(
+    {
+      confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), Prediccion)$byClass[2]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado
+    }
+  )
+}
+
+plot(x=Corte_3, y = Exactitud_3, type = "l", main ="Punto de corte óptimo para la especificidad", xlab="Corte", ylab="Exactitud")
+```
+- ubicando tal punto de corte óptimo para maximizar el especificidad
+
+```{r}
+corte_optimo_3 = which(Exactitud_3==max(Exactitud_3))
+Corte_3[corte_optimo_3]
+```
+
+
+
+###### Predicción y matriz de confusión para el modelo no. 2 con punto de corte optimo empleado
+
+- Generando una nueva predicción con el punto de corte óptimo para el modelo ajustado
+```{r}
+
+Prediccion_3_1<-as.factor(ifelse(prediccion_3<=Corte_3[corte_optimo_3],yes = 1, no = 0))
+confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), 
+                             Prediccion_3_1)
+
+```
+Estudiando el objeto matriz de confusión
+
+```{r}
+names(confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), 
+                             Prediccion_2_1))
+
+confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), 
+                             Prediccion_2_1)$byClass
+```
+
+
+
+```{r}
+
+Prediccion_3_1<-as.factor(ifelse(prediccion_3<=0.44,yes = 1, no = 0))
+confusionMatrix(data = as.factor(Train_copy_1_model$Loan.Status), 
+                             Prediccion_3_1)
+```
+
+
+```{r}
+table(Train$Loan.Status)
+```
+######  Curva ROC modelo 2
+
+```{r}
+##### Comparar modelo ya ajustado (no.1) con uno nuevo y muy simple
+Prediccion_2_roc<-predict(object = modelo_multiple_2,
+                    newdata = Train_copy_1_model, type = "response", 
+                    se.fit = T)
+
+predicciones_roc_2=prediction(Prediccion_2_roc$fit,Train_copy_1$Loan.Status)
+Desempeno_roc_2<-performance(predicciones_roc_2,'tpr','fpr')
+
+## Cgenerando nuevo modelo simple
+modelo_simple_4 <- glm(data = Train_copy_1, 
+              formula = Loan.Status~Purpose+Bankruptcies, family = "binomial")
+
+Prediccion_3_simple<-predict(object = modelo_simple_4,
+                    newdata = Train_copy_1_model, type = "response", 
+                    se.fit = T)
+
+predicciones3_simple<-prediction(Prediccion_3_simple$fit,Train_copy_1_model$Loan.Status)
+Desempeno3_simple<-performance(predicciones3_simple,'tpr','fpr')
+
+#ejecutar en conjunto
+plot(Desempeno_roc_2,col="firebrick")
+plot(Desempeno3_simple, col = "darkgreen", add = T)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###### Cumplimiento de los supuestos del modelo de regresion logistica
+
+- Multicolinealidad (Factor de inflación de la varianza o VIF)
+
+Multicolinealidad: se requiere de muy poca a ninguna multicolinealidad entre los predictores (para regresión logística múltiple).
+
+
+```{r}
+vif(modelo_multiple_2)
+vif_modelo <- vif(modelo_multiple_2)
+
+datos_vif <- data.frame(VIF = vif_modelo)
+ggplot(datos_vif, aes(x = row.names(datos_vif), y = VIF.GVIF)) +
+  geom_bar(stat = "identity", fill = "blue", width = 0.5) +
+  coord_flip() +
+  ggtitle("Valores de VIF para cada variable del modelo") +
+  xlab("Variables del modelo") +
+  ylab("Valor de VIF")+
+  theme_bw()
+```
+
+
+
+- Respuesta binaria: La variable dependiente ha de ser binaria.
+Se satisface
+
+- Independencia: las observaciones han de ser independientes.
+Por corroborar
+
+- Linealidad entre la variable independiente y el logaritmo natural de odds.
+Por corroborar
+
+---
+
+
+#### Cross validation
+
+
+##### Validación cruzada para los modelos: modelo no. 1 y modelo no. 2
+
+
+###### k pliegues
+
+$delta returns a vector of length two. The first component is the raw cross-validation estimate of prediction error. The second component is the adjusted cross-validation estimate. The adjustment is designed to compensate for the bias introduced by not using leave-one-out cross-validation.
+
+```{r}
+#########1.3 k pliegues ################
+MSE_kf_1 <- cv.glm(data = Train_copy_1_model,
+               glmfit = modelo_multiple_1, 
+               K = 100)
+MSE_kf_1$delta
+```
+
+
+```{r}
+#########1.3 k pliegues ################
+MSE_kf_2 <- cv.glm(data = Train_copy_1_model,
+               glmfit = modelo_multiple_2, 
+               K = 100)
+MSE_kf_2$delta
+```
+
+En la validación cruzada por k pliegues evaluada para los 2 modelos disponibles se puede interpretar que el error cuadratico medio (MSE, por sus siglas en inglés) del modelo es menor, lo cuál es la intención, para el modelo multiple no.2, que a su vez resulta ser el que elegimos previamente porque tenía practicamente el mismo accuracy en la matriz de confusión, y además se reducian las variables del modelo. 
+
+
+######  MSPR 
+
+
+MSPR para el modelo multiple no. 1
+```{r}
+set.seed(123)
+indices <- createDataPartition(Train_copy_1_model$Loan.Status, p = 0.7, list = FALSE)
+localTrain <- Train_copy_1_model[indices, ]
+localTest <- Train_copy_1_model[-indices, ]
+
+# Obtener las predicciones en el conjunto de prueba
+predicciones <- predict(modelo_multiple_1, newdata = localTest, type = "response")
+
+# Calcular el MSPR con un modelo de clasifiacion binaria
+MSPR <- mean((localTest$Loan.Status == 1) - predicciones)^2
+
+# Imprimir el resultado
+print(paste0("MSPR = ", MSPR))
+```
+
+
+MSPR para el modelo multiple no. 2
+
+```{r}
+set.seed(123)
+indices <- createDataPartition(Train_copy_1_model$Loan.Status, p = 0.7, list = FALSE)
+localTrain <- Train_copy_1_model[indices, ]
+localTest <- Train_copy_1_model[-indices, ]
+
+# Obtener las predicciones en el conjunto de prueba
+predicciones <- predict(modelo_multiple_2, newdata = localTest, type = "response")
+
+# Calcular el MSPR
+MSPR <- mean((localTest$Loan.Status == 1) - predicciones)^2
+
+# Imprimir el resultado
+print(paste0("MSPR = ", MSPR))
+
+#unique(Test$Loan)
+```
+
+Una vez que la validación cruzada ha demostrado que el mejor modelo es el modelo no. 2, se análiza la matriz de confusión, se emplean metodos de remuestro y predicción para eventos especificos.
+
+#### Ajuste por matriz de confusión
+
+
+#### Bootstraping o remuestreo.
+
+
+
+
+#### Predicción de `fully paid` or `Charged off` para casos especificos
+Una vez que el modelo se ha ajustado, podemos emplearlo para predecir resultados individuales
+
+```{r}
+#define two individuals
+#new <- data.frame(balance = 1400, income = 2000, student = c("Yes", "No"))
+# 
+# #predict probability of defaulting
+# predict(model, new, type="response")
+
+#          1          2 
+# 0.02732106 0.04397747
+```
+
+
+#### Outliers y valores leverage en coeficientes (también distancia de cook) 
+
+
+
+#### Pruebas en Test
+
+
+#### Aspectos a tomar en cuenta
+
+- Al igual que en el caso de la regresión lineal, los resultados obtenidos usando solo un predictor pueden diferir respecto a aquellos obtenidos usando múltiples predictores, especialmente cuando existe correlación entre ellos. Este fenómeno se conoce como confusión (confounding).
+
+
+
+
+
+
+
+
+#### Apartado de dudas:
+
+
+1. - En el caso de que se tenga más de un nivel en una variable ordinal o nominal en la ecuación del modelo, cómo se interpreta el valor de la primera variable que deberia situarse en el intercepto, pero ahora hay más de una de estas variables representadas en el impacto del intercepto o constante.
+--- ejemplo: variable cualitativa termino y variable cualitativa proposito, en ambas se pierde un nivel representado en el intercepto, cómo se encuentra el impacto aislado de cada una?
+
+2. - ¿Cómo comparar odds ratios entre si?
+
+Caso de ejemplo:
+Purposebuy a car :  2.77158367672821 
+Purposebuy house :  1.28198643667157 
+
+¿ cómo puedo explicar y en que medida es más probable que alguien que pida el credito para comprar un carro pague el crédito comparado con alguien que lo pida para casa?
+
+
+
+3. - ¿Por qué el coeficiente y el odds ratio para Purposerenewable_energy es muy alto?
+
+4. - EL modelo OLSRR que nos indica por estadístico las variables ideales, toma en cuenta interacciones?
+
+5. En la selección de variables se recurrió al estadístico cp de mallow porque no encontramos escala del PRESS ¿Cómo emplear el PRESS?
+plot(Subs, scale = c( "Cp"), main="Cp de Mallow")#Cp de mallow
+
+6. ¿El calculo del MSPR se hace apropiadamente para un modelo de respuesta binaria?
+
+7. ¿Cómo manejar la multicolinealidad en un modelo de regresión lineal?
+
+8. Si los estadísticos de predicción arrojan buenos valores, ¿por qué la curva ROC no es la mejor?
+
+
+9. La curva ROC depende de el punto de corte optimo? o es una curva ROC general para el modelo sin importar el punto de corte optimo que se busca con el ciclo que maximiza el accuracy en la matriz de confusión.
