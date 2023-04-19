@@ -25,6 +25,7 @@ library(paletteer)
 library(MASS)
 library(glmulti) # Automated model selection and model-averaging. (see more here https://rstudio-pubs-static.s3.amazonaws.com/2897_9220b21cfc0c43a396ff9abf122bb351.html)
 library(boot)
+library(vcd)
 ```
 
 ```{r, carga de datos, include=FALSE}
@@ -195,18 +196,21 @@ glmulti.logistic.out@formulas
 ```
 
 ```{r}
-### CON INTERACCIONES TARDA MUCHISIMO (MÁS DE 20 MINUTOS Y SIN TERMINAR)
-# glmulti.logistic.out <- glmulti(Loan.Status ~ Term + Home.Ownership + Purpose + 
-    # Current.Loan.Amount + Credit.Score + Annual.Income + Monthly.Debt + 
-    # Years.of.Credit.History, data = Train_intern_1,, data = Train_intern_1,
-#                                 level = 2,                   # Considerar interacciones de segundo orden
-#                                 method = "h",                # Enfoque exhaustivo
-#                                 crit = "aic", # Considerar AIC, BIC y R-squared ajustado
-#                                 confsetsize = 5,             # Mantener 5 mejores modelos
-#                                 plotty = FALSE,               # Mostrar gráfico
-#                                 report = FALSE,              # No informes intermedios
-#                                 fitfunction = "glm",         # Función de ajuste glm
-#                                 family = binomial)   
+#TARDO MÁS DE HORA Y MEDIA Y NO TERMIN+O
+# glmulti.logistic.out <-
+#     glmulti(Loan.Status ~ Term + Home.Ownership + Purpose + 
+#     Current.Loan.Amount + Credit.Score + Annual.Income + Monthly.Debt + 
+#     Years.of.Credit.History, data = Train_intern_1,
+#             level = 2,               # No interaction considered
+#             method = "h",            # Exhaustive approach
+#             crit = "aic",            # AIC as criteria
+#             confsetsize = 5,         # Keep 5 best models
+#             plotty = F, report = F,  # No plot or interim reports
+#             fitfunction = "glm",     # glm function
+#             family = binomial)       # binomial family for logistic regression
+# 
+# ## Show 5 best models (Use @ instead of $ for an S4 object)
+# glmulti.logistic.out@formulas
 ```
 
 De entrada, el mejor modelo por AIC que propone la funcion glmulti() es el mismo modelo de regresión logística que se le pasó por parametro, por lo que podemos hablar de que ese al momento es el modelo ideal, con 8 features. Sin embargo en segundo y tercer lugar proponé modelos con 7 features, por lo que se evaluará contra validación cruzada la viabilidad de irnos por un modelo más ligero. 
@@ -283,7 +287,7 @@ Concluimos que la alternativa no.2 con solo 7 features presenta ligeramente un M
 
 
 ##### Modelo no. 1
-###### Matriz de confusión para el modelo base con 8 features
+###### Matriz de confusión para el modelo con 6 features
 
 - Respuesta del modelo en el conjunto de prueba
 
@@ -294,21 +298,24 @@ boxplot(prediccion_1)
 ```
 Parece que hay que ajustar el modelo por la distribución que muestra.
 
-- punto de corte ideal para maximizar la sensibilidad
+- punto de corte ideal para maximizar la sensibilidad (contra train)
 
 ```{r}
+
+prediccion_1 = predict(object = modelo_1_2,
+                    newdata = Train_intern_1, type = "response")
 
 Exactitud_1 <- vector()
 Corte_1 <- seq(0.05, 0.95, by = 0.001)
 
 for (i in 1:length(Corte_1)) {
-  Prediccion <- as.factor(ifelse(prediccion_1 <= Corte_1[i], yes = 1, no = 0))
+  Prediccion <- as.factor(ifelse(prediccion_1 >= Corte_1[i], yes = 1, no = 0))
   
   Exactitud_1[i] <- tryCatch(
     {
       # confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), Prediccion)$overall[1]
       confusionMatrix(data = as.factor(Train_intern_1$Loan.Status), 
-                             Prediccion_1)$byClass[1]
+                             Prediccion)$byClass[1]
     },
     error = function(e) {
       0 # O cualquier valor predeterminado
@@ -316,18 +323,127 @@ for (i in 1:length(Corte_1)) {
   )
 }
 
-plot(x=Corte_1, y = Exactitud_1, type = "l", main ="Punto de corte óptimo", xlab="Corte", ylab="Exactitud")
+plot(x=Corte_1, y = Exactitud_1, type = "l", main ="Punto de corte óptimo para maximizar la sensibilidad (vs train)", xlab="Corte", ylab="Exactitud")
 ```
 
-- punto de corte ideal para maximizar el accuracy
+- punto de corte ideal para maximizar la sensibilidad (contra test)
 
 ```{r}
+prediccion_1 = predict(object = modelo_1_2,
+                    newdata = Test_intern_1, type = "response")
 
 Exactitud_1 <- vector()
 Corte_1 <- seq(0.05, 0.95, by = 0.001)
 
 for (i in 1:length(Corte_1)) {
-  Prediccion <- as.factor(ifelse(prediccion_1 <= Corte_1[i], yes = 1, no = 0))
+  Prediccion <- as.factor(ifelse(prediccion_1 >= Corte_1[i], yes = 1, no = 0))
+  
+  Exactitud_1[i] <- tryCatch(
+    {
+      # confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), Prediccion)$overall[1]
+      confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), 
+                             Prediccion)$byClass[1]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado
+    }
+  )
+}
+
+plot(x=Corte_1, y = Exactitud_1, type = "l", main ="Punto de corte óptimo para maximizar la sensibilidad (vs test)", xlab="Corte", ylab="Exactitud")
+```
+- punto de corte ideal para maximizar la especificidad (contra train)
+
+```{r}
+prediccion_1 = predict(object = modelo_1_2,
+                    newdata = Train_intern_1, type = "response")
+
+Exactitud_1 <- vector()
+Corte_1 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_1)) {
+  Prediccion <- as.factor(ifelse(prediccion_1 >= Corte_1[i], yes = 1, no = 0))
+  
+  Exactitud_1[i] <- tryCatch(
+    {
+      # confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), Prediccion)$overall[1]
+      confusionMatrix(data = as.factor(Train_intern_1$Loan.Status), 
+                             Prediccion)$byClass[2]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado
+    }
+  )
+}
+
+plot(x=Corte_1, y = Exactitud_1, type = "l", main ="Punto de corte óptimo para maximizar la especificidad (vs train)", xlab="Corte", ylab="Exactitud")
+```
+
+- punto de corte ideal para maximizar la especificidad (contra test)
+
+```{r}
+prediccion_1 = predict(object = modelo_1_2,
+                    newdata = Test_intern_1, type = "response")
+
+Exactitud_1 <- vector()
+Corte_1 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_1)) {
+  Prediccion <- as.factor(ifelse(prediccion_1 >= Corte_1[i], yes = 1, no = 0))
+  
+  Exactitud_1[i] <- tryCatch(
+    {
+      # confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), Prediccion)$overall[1]
+      confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), 
+                             Prediccion)$byClass[2]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado
+    }
+  )
+}
+
+plot(x=Corte_1, y = Exactitud_1, type = "l", main ="Punto de corte óptimo para maximizar la especificidad (vs test)", xlab="Corte", ylab="Exactitud")
+```
+
+- punto de corte ideal para maximizar el accuracy (contra train)
+
+```{r}
+
+prediccion_1 = predict(object = modelo_1_2,
+                    newdata = Train_intern_1, type = "response")
+
+Exactitud_1 <- vector()
+Corte_1 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_1)) {
+  Prediccion <- as.factor(ifelse(prediccion_1 >= Corte_1[i], yes = 1, no = 0))
+  
+  Exactitud_1[i] <- tryCatch(
+    {
+      confusionMatrix(data = as.factor(Train_intern_1$Loan.Status), Prediccion)$overall[1]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado
+    }
+  )
+}
+
+plot(x=Corte_1, y = Exactitud_1, type = "l", main ="Punto de corte óptimo para maximizar el accuracy (vs train)", xlab="Corte", ylab="Exactitud")
+```
+
+- punto de corte ideal para maximizar el accuracy (contra test)
+
+```{r}
+
+prediccion_1 = predict(object = modelo_1_2,
+                    newdata = Test_intern_1, type = "response")
+
+Exactitud_1 <- vector()
+Corte_1 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_1)) {
+  Prediccion <- as.factor(ifelse(prediccion_1 >= Corte_1[i], yes = 1, no = 0))
   
   Exactitud_1[i] <- tryCatch(
     {
@@ -339,7 +455,7 @@ for (i in 1:length(Corte_1)) {
   )
 }
 
-plot(x=Corte_1, y = Exactitud_1, type = "l", main ="Punto de corte óptimo", xlab="Corte", ylab="Exactitud")
+plot(x=Corte_1, y = Exactitud_1, type = "l", main ="Punto de corte óptimo para maximizar el accuracy (vs test)", xlab="Corte", ylab="Exactitud")
 ```
 
 
@@ -348,10 +464,18 @@ corte_optimo_1 = which(Exactitud_1==max(Exactitud_1))
 Corte_1[corte_optimo_1]
 ```
 ```{r}
-Prediccion_1<-as.factor(ifelse(prediccion_1<=Corte_1[corte_optimo_1],yes = 1, no = 0))
+Prediccion_1<-as.factor(ifelse(prediccion_1>=Corte_1[corte_optimo_1][2],yes = 1, no = 0))
 confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), 
                              Prediccion_1)
 
+cfmx1 = confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), 
+                             Prediccion_1)
+```
+
+```{r}
+mosaic(cfmx1$table, shade = T, colorize = T,
+       gp = gpar(fill = matrix(c("green3", "red2", "red2", "green3"), 2, 2)),
+       main = "Matriz de confusión")
 ```
 
 ###### Curva ROC
@@ -379,6 +503,10 @@ Desempeno1_prueba<-performance(predicciones1_prueba,'tpr','fpr')
 #ejecutar en conjunto
 plot(Desempeno_roc_1,col="darkgreen")
 plot(Desempeno1_prueba, col = "firebrick", add = T)
+
+legend(x=.6, y=.4, legend = c("Completo","Simple"),
+      lwd = 2, col = c("darkgreen", "firebrick"),
+      title = "Modelos")
 ```
 
 
@@ -433,23 +561,24 @@ prediccion_2 = predict(object = modelo_1_3,
                     newdata = Test_intern_1, type = "response")
 boxplot(prediccion_2)
 ```
-Parece que hay que ajustar el modelo por la distribución que muestra.
+Parece que quizás pueda existir un sobre ajuste
 
-- punto de corte ideal para maximizar la sensibilidad
-
+- punto de corte ideal para maximizar la sensibilidad (contra train)
 ```{r}
+prediccion_2 = predict(object = modelo_1_3,
+                    newdata = Train_intern_1, type = "response")
 
 Exactitud_1 <- vector()
 Corte_1 <- seq(0.05, 0.95, by = 0.001)
 
 for (i in 1:length(Corte_1)) {
-  Prediccion <- as.factor(ifelse(prediccion_2 <= Corte_1[i], yes = 1, no = 0))
+  Prediccion <- as.factor(ifelse(prediccion_2 >= Corte_1[i], yes = 1, no = 0))
   
   Exactitud_1[i] <- tryCatch(
     {
       # confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), Prediccion)$overall[1]
       confusionMatrix(data = as.factor(Train_intern_1$Loan.Status), 
-                             Prediccion_1)$byClass[1]
+                             Prediccion)$byClass[1]
     },
     error = function(e) {
       0 # O cualquier valor predeterminado
@@ -457,21 +586,131 @@ for (i in 1:length(Corte_1)) {
   )
 }
 
-plot(x=Corte_1, y = Exactitud_1, type = "l", main ="Punto de corte óptimo", xlab="Corte", ylab="Exactitud")
+plot(x=Corte_1, y = Exactitud_1, type = "l", main ="Punto de corte óptimo para maximizar la sensibilidad (vs train)", xlab="Corte", ylab="Exactitud")
 ```
 
-
-- punto de corte ideal para maximizar el accuracy
+- punto de corte ideal para maximizar la sensibilidad (contra test)
 
 ```{r}
+prediccion_2 = predict(object = modelo_1_3,
+                    newdata = Test_intern_1, type = "response")
 
 Exactitud_1 <- vector()
 Corte_1 <- seq(0.05, 0.95, by = 0.001)
 
 for (i in 1:length(Corte_1)) {
-  Prediccion <- as.factor(ifelse(prediccion_2 <= Corte_1[i], yes = 1, no = 0))
+  Prediccion <- as.factor(ifelse(prediccion_2 >= Corte_1[i], yes = 1, no = 0))
   
   Exactitud_1[i] <- tryCatch(
+    {
+      # confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), Prediccion)$overall[1]
+      confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), 
+                             Prediccion)$byClass[1]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado
+    }
+  )
+}
+
+plot(x=Corte_1, y = Exactitud_1, type = "l", main ="Punto de corte óptimo para maximizar la sensibilidad (vs test)", xlab="Corte", ylab="Exactitud")
+```
+
+- punto de corte ideal para maximizar la especificidad (contra train)
+
+```{r}
+prediccion_2 = predict(object = modelo_1_3,
+                    newdata = Train_intern_1, type = "response")
+
+Exactitud_1 <- vector()
+Corte_1 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_1)) {
+  Prediccion <- as.factor(ifelse(prediccion_2 >= Corte_1[i], yes = 1, no = 0))
+  
+  Exactitud_1[i] <- tryCatch(
+    {
+      # confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), Prediccion)$overall[1]
+      confusionMatrix(data = as.factor(Train_intern_1$Loan.Status), 
+                             Prediccion)$byClass[2]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado
+    }
+  )
+}
+
+plot(x=Corte_1, y = Exactitud_1, type = "l", main ="Punto de corte óptimo para maximizar la especificidad (vs train)", xlab="Corte", ylab="Exactitud")
+```
+
+
+- punto de corte ideal para maximizar la especificidad (contra test)
+
+```{r}
+prediccion_2 = predict(object = modelo_1_3,
+                    newdata = Test_intern_1, type = "response")
+
+Exactitud_1 <- vector()
+Corte_1 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_1)) {
+  Prediccion <- as.factor(ifelse(prediccion_2 >= Corte_1[i], yes = 1, no = 0))
+  
+  Exactitud_1[i] <- tryCatch(
+    {
+      # confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), Prediccion)$overall[1]
+      confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), 
+                             Prediccion)$byClass[2]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado
+    }
+  )
+}
+
+plot(x=Corte_1, y = Exactitud_1, type = "l", main ="Punto de corte óptimo para maximizar la especificidad (vs test)", xlab="Corte", ylab="Exactitud")
+```
+
+
+- punto de corte ideal para maximizar el accuracy (contra train)
+
+```{r}
+prediccion_2 = predict(object = modelo_1_3,
+                    newdata = Train_intern_1, type = "response")
+
+Exactitud_2 <- vector()
+Corte_2 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_2)) {
+  Prediccion <- as.factor(ifelse(prediccion_2 >= Corte_2[i], yes = 1, no = 0))
+  
+  Exactitud_2[i] <- tryCatch(
+    {
+      confusionMatrix(data = as.factor(Train_intern_1$Loan.Status), Prediccion)$overall[1]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado
+    }
+  )
+}
+
+plot(x=Corte_2, y = Exactitud_2, type = "l", main ="Punto de corte óptimo para maximizar el accuracy (vs train)", xlab="Corte", ylab="Exactitud")
+```
+
+- punto de corte ideal para maximizar el accuracy (contra test)
+
+```{r}
+
+prediccion_2 = predict(object = modelo_1_3,
+                    newdata = Test_intern_1, type = "response")
+
+Exactitud_2 <- vector()
+Corte_2 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_2)) {
+  Prediccion <- as.factor(ifelse(prediccion_2 >= Corte_2[i], yes = 1, no = 0))
+  
+  Exactitud_2[i] <- tryCatch(
     {
       confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), Prediccion)$overall[1]
     },
@@ -481,23 +720,33 @@ for (i in 1:length(Corte_1)) {
   )
 }
 
-plot(x=Corte_1, y = Exactitud_1, type = "l", main ="Punto de corte óptimo", xlab="Corte", ylab="Exactitud")
+plot(x=Corte_2, y = Exactitud_2, type = "l", main ="Punto de corte óptimo para maximizar el accuracy (vs test)", xlab="Corte", ylab="Exactitud")
 ```
 
-
+Seleccionando los corte optimos de acuerdo con el accuracy
 ```{r}
-corte_optimo_1 = which(Exactitud_1==max(Exactitud_1))
+corte_optimo_1 = which(Exactitud_2==max(Exactitud_2))
 Corte_1[corte_optimo_1]
 ```
 
+
+
 ```{r}
-Prediccion_2<-as.factor(ifelse(prediccion_2<=Corte_1[corte_optimo_1],yes = 1, no = 0))
+Prediccion_2<-as.factor(ifelse(prediccion_2>=Corte_1[corte_optimo_1][1],yes = 1, no = 0))
 confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), 
                              Prediccion_2)
 
 cfmx2 = confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), 
                              Prediccion_2)
 ```
+
+```{r}
+mosaic(cfmx2$table, shade = T, colorize = T,
+       gp = gpar(fill = matrix(c("green3", "red2", "red2", "green3"), 2, 2)),
+       main = "Matriz de confusión")
+```
+
+
 
 ###### Curva ROC
 
@@ -513,9 +762,14 @@ Desempeno_roc_2<-performance(predicciones_roc_2,'tpr','fpr')
 #ejecutar en conjunto
 plot(Desempeno_roc_2,col="darkgreen")
 plot(Desempeno1_prueba, col = "firebrick", add = T)
+
+legend(x=.6, y=.4, legend = c("Completo","Simple"),
+      lwd = 2, col = c("darkgreen", "firebrick"),
+      title = "Modelos")
+
 ```
 
-
+¿Por qué la curva ROC no se ajusta a un buen modelo como lo indica la matriz de confusión?
 
 ###### Intervalos de confianza modelo no.2
 
@@ -573,7 +827,7 @@ Del mejor modelo, podemos interpretar de la anterior salida de consola los ODDS 
 - Si la variable `Purpose` adopta el valor `small_business`, este evento estara asociado con una disminución del 62% en las probabilidades del pago al corriente (`Fully Paid`)
 - Si la variable `Purpose` adopta el valor `take a trip`, este evento estara asociado con un aumento del 147% en las probabilidades del pago al corriente (`Fully Paid`)
 - Si la variable `Purpose` adopta el valor `vacation`, este evento estara asociado con una disminución del 13% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `wedding`, este evento estara asociado con un aumento del 25% en las probabilidades del pago al corriente (`Fully Paid`).
+- Si la variable `Purpose` adopta el valor `wedding`, este evento estara asociado con un aumento del 25.6% en las probabilidades del pago al corriente (`Fully Paid`).
 - Si la variable `Current.Loan.Amount` aumenta en 1,000 unidades, este evento estara asociado con una disminución del 5.8% en las probabilidades del pago al corriente (`Fully Paid`).
 - Si la variable `Annual.Income` aumenta en 1,000 unidades, este evento estara asociado con un aumento del 3.9% en las probabilidades del pago al corriente (`Fully Paid`).
 - Si la variable `Monthly.Debt` aumenta en 100 unidades, este evento estara asociado con una disminución del 12.4% en las probabilidades del pago al corriente (`Fully Paid`).
@@ -591,7 +845,8 @@ De lo que podemos concluir que las variables con mayor incidencia son:
 ##### Exportando modelo al directorio
 
 ```{r}
-save(modelo_1_3, cfmx2, file = "../models/Modelo_2.RData")
+cfmx_modelo2 = cfmx2
+save(modelo_1_3, cfmx_modelo2, file = "../models/Modelo_2.RData")
 ```
 
 <!-- Se carga tal documento con -->
