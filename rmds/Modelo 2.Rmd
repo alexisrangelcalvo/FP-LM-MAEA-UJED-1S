@@ -545,8 +545,75 @@ for (i in seq_along(nombres_vars)) {
 
 
 
+###### Evaluación supuestos para el modelo no.1
 
-###### Bootstrap
+- VIF
+
+```{r}
+vif(modelo_1_2)
+vif_modelo <- vif(modelo_1_2)
+datos_vif <- data.frame(VIF = vif_modelo)
+ggplot(datos_vif, aes(x = row.names(datos_vif), y = VIF.GVIF)) +
+  geom_bar(stat = "identity", fill = "blue", width = 0.5) +
+  coord_flip() +
+  ggtitle("Valores de VIF para cada variable del modelo") +
+  xlab("Variables del modelo") +
+  ylab("Valor de VIF")
+```
+
+
+
+###### Bootstraping para el modelo no.1
+
+Empleamos como estadístico a evalua el % de aciertos (suma de verdaderos positivos y verdaderos negativos sobre el numero de observaciones en Train para este caso)
+
+
+```{r}
+modelo.fun <- function(datos, subconjunto){
+  #Generamos un vector de Predicción para la probabilidad de fully charged (1) para un nuevo vector random [llamado predicciones]
+  predicciones<-predict(modelo_1_2, newdata = datos[subconjunto,])
+  #Con dicho vector [predicciones], separar por clases para fully paid (1) y charged off(0) para generar el nuevo vector [Prediccion]
+  Predicciones <- as.factor(ifelse(predicciones >= Corte_1[corte_optimo_1][1],
+                                yes = 1, no = 0))
+  # Instanciamos la matriz de confusion para la variable de respuesta       (loan.status) con el vector de probabilidades llamado predicciones
+  cfmtx = confusionMatrix(data = as.factor(datos$Loan.Status), 
+                             Predicciones)
+  
+  # Generamos un promedio de el porcentaje de aciertos general
+  class_prop = (cfmtx$table[1] + cfmtx$table[4]) / length(Train_intern_1$Loan.Status)
+  
+  
+  # Regresamos dicho promedio
+  return(class_prop)
+}
+
+
+Bootstrap<-boot(data = Train_intern_1, 
+                statistic = modelo.fun,## <- el parámetro 
+                #### statistic requiere una función que reciba dos 
+                #### parámetros: la muestra y los índices
+                R = 10000) #10mil muestras simuladas
+
+```
+
+```{r}
+Bootstrap
+```
+
+```{r}
+#par(mfrow = c(2,2))
+hist(Bootstrap$t[,1], breaks = 100,
+     xlab = "% de aciertos",
+     main = "Bootstrap de la predicción para el modelo 1",
+     ylab = "Frecuencia")
+abline(v = quantile(x = Bootstrap$t[,1], c(.025,.975)),col = "red")
+abline(v = mean(Bootstrap$t[,1]), col = "darkgreen", lwd = 2)
+```
+
+Promedio de la estimación con 10mil muestras a partir de Train:
+```{r}
+mean(Bootstrap$t[,1])
+```
 
 
 
@@ -802,6 +869,78 @@ for (i in seq_along(nombres_vars)) {
   cat(paste(nombres_vars[i], ": ", exp(resumen$coefficients[i, "Estimate"]), "\n"))
 }
 ```
+
+###### Evaluación supuestos para el modelo no.2
+
+- VIF
+
+```{r}
+vif(modelo_1_3)
+vif_modelo <- vif(modelo_1_3)
+datos_vif <- data.frame(VIF = vif_modelo)
+ggplot(datos_vif, aes(x = row.names(datos_vif), y = VIF.GVIF)) +
+  geom_bar(stat = "identity", fill = "blue", width = 0.5) +
+  coord_flip() +
+  ggtitle("Valores de VIF para cada variable del modelo") +
+  xlab("Variables del modelo") +
+  ylab("Valor de VIF")
+```
+
+
+
+###### Bootstraping para el modelo no.2
+
+Empleamos como estadístico a evalua el % de aciertos (suma de verdaderos positivos y verdaderos negativos sobre el numero de observaciones en Train para este caso)
+
+
+```{r}
+modelo.fun <- function(datos, subconjunto){
+  #Generamos un vector de Predicción para la probabilidad de fully charged (1) para un nuevo vector random [llamado predicciones]
+  predicciones<-predict(modelo_1_3, newdata = datos[subconjunto,])
+  #Con dicho vector [predicciones], separar por clases para fully paid (1) y charged off(0) para generar el nuevo vector [Prediccion]
+  Predicciones <- as.factor(ifelse(predicciones >= Corte_1[corte_optimo_1][1],
+                                yes = 1, no = 0))
+  # Instanciamos la matriz de confusion para la variable de respuesta       (loan.status) con el vector de probabilidades llamado predicciones
+  cfmtx = confusionMatrix(data = as.factor(datos$Loan.Status), 
+                             Predicciones)
+  
+  # Generamos un promedio de el porcentaje de aciertos general
+  class_prop = (cfmtx$table[1] + cfmtx$table[4]) / length(Train_intern_1$Loan.Status)
+  
+  
+  # Regresamos dicho promedio
+  return(class_prop)
+}
+
+
+Bootstrap<-boot(data = Train_intern_1, 
+                statistic = modelo.fun,## <- el parámetro 
+                #### statistic requiere una función que reciba dos 
+                #### parámetros: la muestra y los índices
+                R = 10000) #10mil muestras simuladas
+
+```
+
+```{r}
+Bootstrap
+```
+
+```{r}
+#par(mfrow = c(2,2))
+hist(Bootstrap$t[,1], breaks = 100,
+     xlab = "% de aciertos",
+     main = "Bootstrap de la predicción para el modelo 1",
+     ylab = "Frecuencia")
+abline(v = quantile(x = Bootstrap$t[,1], c(.025,.975)),col = "red")
+abline(v = mean(Bootstrap$t[,1]), col = "darkgreen", lwd = 2)
+```
+
+Promedio de la estimación con 10mil muestras a partir de Train:
+```{r}
+mean(Bootstrap$t[,1])
+```
+
+
 
 ##### Conclusiones
 
