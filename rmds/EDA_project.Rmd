@@ -9,13 +9,13 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r, cargando Rdata, include=FALSE}
+```{r, cargando Rdata, echo=FALSE}
 load("~/Maestria/1er semestre/Modelos lineales/Proyecto final de curso Modelos Lineales MAEA 1er semestre/brief/DatosParaProyecto.RData")
 Train_copy = Train
 Test_copy = Test
 ```
 
-```{r, include=FALSE}
+```{r, echo=FALSE}
 library(tidyverse)
 library(explore)
 library(tidyr)
@@ -74,6 +74,10 @@ Sobre la variable dependiente y de acuerdo con la siguiente pagina web:
 
 Fuente: https://budgeting.thenest.com/account-paid-full-vs-chargeoff-23884.html
 
+#### Objetivos
+
+El presente rmarkdown tiene como objetivo elaborar un análisis exploratorio para la busqueda de patrones de cumplimiento en las variables a emplear en el modelo de regresión lógistica, así como también proponer limites y filtros a cada variable continua en caso de existir valores presuntamente atipicos. Estas propuestas de filtros se evaluaran y se propondran en el análisis univariado y serán valorados al final del rmarkdown para generar 3 muestras (muestra completa, submuestra 1 y submuestra 2) con las que en cada una se ajustaran modelos logit, para finalmente comparar los resultados de cada modelo y elegir el de mejor performance contra el estadístico de prueba (% de aciertos).
+
 #### Valores faltantes
 
 ```{r, echo=FALSE}
@@ -81,6 +85,11 @@ missmap(Train_copy, main = "Missing values vs observed")
 ```
 
 #### Análisis univariado
+
+Herramienta Explore
+```{r}
+#explore(Train_copy)
+```
 
 
 
@@ -99,8 +108,9 @@ Train_copy$Loan.Status = as.factor(Train_copy$Loan.Status)
 
 - Observamos la variable respuesta `Loan.Status`:
 ```{r, echo=FALSE}
-ggplot(Train_copy, aes(fct_infreq(Loan.Status)))+
+gg1 = ggplot(Train_copy, aes(fct_infreq(Loan.Status)))+
   geom_bar(stat="count", fill=c("steelblue", "firebrick"))+
+  scale_y_continuous(limits = c(0, 30000))+
   labs(title = "Variable 'Loan.Status'",
        x = "Plazo",
        y = "Frecuencia") +
@@ -111,15 +121,16 @@ ggplot(Train_copy, aes(fct_infreq(Loan.Status)))+
 
 ######  Análisis univariado variables nominales y ordinales
 
-Paso numero 1, pasar a factores todas estas variables nominales y ordinales
+<!-- Paso numero 1, pasar a factores todas estas variables nominales y ordinales -->
 
-a. Term
+<!-- a. Term -->
 ```{r, echo=FALSE}
 #class(Train_copy$Term)
 Train_copy$Term = as.factor(Train_copy$Term)
 
-ggplot(Train_copy, aes(fct_infreq(Term)))+
+gg2 = ggplot(Train_copy, aes(fct_infreq(Term)))+
   geom_bar(stat="count", fill=c("darkgreen", "yellowgreen"))+
+  scale_y_continuous(limits = c(0, 27000))+
   labs(title = "Variable 'Term'",
        x = "Plazo",
        y = "Frecuencia") +
@@ -128,38 +139,45 @@ ggplot(Train_copy, aes(fct_infreq(Term)))+
   geom_text(stat = "count", aes(label = after_stat(format(count, big.mark = ","))), vjust = -0.5)
 ```
 
-b. Years.in.current.job
+<!-- b. Years.in.current.job -->
 ```{r, echo=FALSE}
 Train_copy$Years.in.current.job = as.factor(Train_copy$Years.in.current.job)
 my_palette = paletteer_c("ggthemes::Blue", length(unique(Train_copy$Years.in.current.job)))
 my_palette_reverse = rev(my_palette)
 
-ggplot(Train_copy, aes(fct_infreq(Years.in.current.job)))+
+gg3 = ggplot(Train_copy, aes(fct_infreq(Years.in.current.job)))+
   geom_bar(stat="count", fill=my_palette_reverse)+
+  scale_y_continuous(limits = c(0, 13000))+
   labs(title = "Variable 'Years.in.current.job'",
        x = "Años",
        y = "Frecuencia") +
   theme_bw() +
   # Agregar el número de observaciones al filo de cada barra
-  geom_text(stat = "count", aes(label = after_stat(format(count, big.mark = ","))), vjust = -0.5)
+  geom_text(stat = "count", aes(label = after_stat(format(count, big.mark = ","))), vjust = -0.5, size = 2)
 
 ```
 
-c. Home.Ownership
+<!-- c. Home.Ownership -->
 ```{r, echo=FALSE}
 Train_copy$Home.Ownership = as.factor(Train_copy$Home.Ownership)
 
 my_palette = paletteer_c("ggthemes::Blue", length(unique(Train_copy$Home.Ownership)))
 my_palette_reverse = rev(my_palette)
 
-ggplot(Train_copy, aes(fct_infreq(Home.Ownership)))+
+gg4 = ggplot(Train_copy, aes(fct_infreq(Home.Ownership)))+
   geom_bar(fill=my_palette_reverse)+
+  scale_y_continuous(limits = c(0, 20000))+
   labs(title = "Variable 'Home.Ownership'",
        x = "Tipo de dueño",
        y = "Frecuencia") +
   theme_bw() +
   # Agregar el número de observaciones al filo de cada barra
-  geom_text(stat = "count", aes(label = after_stat(format(count, big.mark = ","))), vjust = -0.5)
+  geom_text(stat = "count", aes(label = after_stat(format(count, big.mark = ","))), vjust = -0.5, size = 3)
+```
+
+
+```{r}
+grid.arrange(gg1, gg2, gg3, gg4, nrow = 2)
 ```
 
 
@@ -181,18 +199,26 @@ my_palette_reverse = rev(my_palette)
 
 ggplot(Train_copy, aes(fct_infreq(Purpose)))+
   geom_bar(stat="count", fill=my_palette_reverse)+
+  scale_y_continuous(limits = c(0, 27000))+
   labs(title = "Variable 'Purpose'",
        x = "Proposito",
        y = "Frecuencia") +
   theme_bw() +
   # Agregar el número de observaciones al filo de cada barra
-  geom_text(stat = "count", aes(label = after_stat(format(count, big.mark = ","))), size=2)+
+  geom_text(stat = "count", aes(label = after_stat(format(count, big.mark = ","))), size=3, hjust = 0)+
   coord_flip()
 
 #unique(Train_copy$Purpose)
 # # Cambiar "hombre" por 1 y "mujer" por 2
 # nuevo_vector <- ifelse(observaciones == "hombre", 1, ifelse(observaciones == "mujer", 2, obse
 ```
+
+```{r, echo=FALSE}
+# unique(Train_copy$Purpose)
+# Train_copy %>% filter(Purpose == "") %>% select(Purpose, Loan.Status)
+```
+
+
 
 ######  Análisis univariado y agrupación grafica de variables continuas
 
@@ -213,26 +239,38 @@ Para el modelado con muestras reducidas, se requiere un análisis estadístico u
 `Months.since.last.delinquent`
 
 ```{r, echo=FALSE}
-Train_copy_continuas = Train_copy %>% select(Current.Loan.Amount, Credit.Score, Annual.Income, Monthly.Debt, Years.of.Credit.History, Months.since.last.delinquent, Number.of.Open.Accounts, Current.Credit.Balance, Maximum.Open.Credit, Bankruptcies, Tax.Liens)
+Train_copy_continuas = Train_copy %>% select(Loan.Status, Current.Loan.Amount, Credit.Score, Annual.Income, Monthly.Debt, Years.of.Credit.History, Months.since.last.delinquent, Number.of.Open.Accounts, Current.Credit.Balance, Maximum.Open.Credit, Bankruptcies, Tax.Liens)
 ```
 
 ```{r, echo=FALSE}
-train_long_form = gather(select(Train_copy_continuas, -c(Maximum.Open.Credit, Current.Loan.Amount, Annual.Income, Current.Credit.Balance, Monthly.Debt, Credit.Score, Bankruptcies, Tax.Liens)), key = "variable", value = "valor")
+train_long_form = gather(select(Train_copy_continuas, -c(Maximum.Open.Credit, Current.Loan.Amount, Annual.Income, Current.Credit.Balance, Monthly.Debt, Credit.Score, Bankruptcies, Tax.Liens)), key = "variable", value = "valor", -Loan.Status)
 
 ggplot(train_long_form, aes(y=variable, x=valor))+
-  geom_boxplot()+
-  # geom_jitter()+
+  geom_jitter(aes(alpha=0.1, color=Loan.Status))+
+  geom_violin(alpha=0.5)+
+  geom_boxplot(width = 0.1, alpha=0.5)+
   stat_summary(fun=mean, colour="darkred", geom="point",
                shape=18, size=3, show.legend=FALSE)+
   scale_x_continuous(NULL)+
   scale_y_discrete(NULL)+
+  ggtitle("Violin & Boxplot + jitter por clase (1 = Fully Paid, 0 = Charged Off)")+
   theme_bw()
 ```
 
 
-De la anterior gráfica se puede apreciar la presencia de presuntos valores atípicos en las variables `Years.of.Credit.History`, `Number.of.Open.Accounts` y `Months.since.last.delinquent`. Un filtro IQRT podría ser la primera opción, pero se opta por hacer un análisis más univariante buscando adoptar un filtro que siga la lógica de negocio.
+```{r, include=FALSE}
+gather(select(Train_copy_continuas, -c(Maximum.Open.Credit, Current.Loan.Amount, Annual.Income, Current.Credit.Balance, Monthly.Debt, Credit.Score, Bankruptcies, Tax.Liens)), key = "variable", value = "valor", -Loan.Status)
+```
 
-- `Years.of.Credit.History`
+
+Con la aterior gráfica podemos:
+Descartar patrones de cumplimiento por las variables `Years.of.Credit.History`, 
+`Number.of.Open.Accounts` y `Months.since.last.delinquent`.
+Apreciar la presencia de presuntos valores atípicos en las variables `Years.of.Credit.History`, `Number.of.Open.Accounts` y `Months.since.last.delinquent`.
+
+Para esta variable no se propone ningún filtro de valores presuntamente atípicos.
+
+- Análisis particular de `Years.of.Credit.History`
 
 Visualizamos los cuartiles de la variable `Years.of.Credit.History`
 
@@ -267,14 +305,16 @@ nrow(filter(Train_copy_continuas, Years.of.Credit.History > 40))
 
 ```{r, echo=FALSE}
 plot_1 = ggplot(filter(Train_copy_continuas, Years.of.Credit.History <= 40), aes(y=1, x=Years.of.Credit.History))+
-  geom_violin() +
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
   geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
   scale_y_continuous(NULL, labels = NULL)+
   ggtitle("Variable Years.of.Credit.History posterior al filtro (valores < 40)")+
   theme_bw()
 
 plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Years.of.Credit.History))+
-  geom_violin() +
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
   geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
   scale_y_continuous(NULL, labels = NULL)+
   ggtitle("Variable Years.of.Credit.History previo al filtro")+
@@ -282,8 +322,9 @@ plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Years.of.Credit.History))+
 
 grid.arrange(plot_2, plot_1, ncol = 1)
 ```
+Para esta variable se propone el filtro de valores presuntamente atípicos (Years.of.Credit.History < 40).
 
-`Number.of.Open.Accounts`
+- Análisis particular de `Number.of.Open.Accounts`
 
 
 Visualizamos los cuartiles para `Number.of.Open.Accounts`
@@ -300,7 +341,8 @@ nrow(filter(Train_copy_continuas, Number.of.Open.Accounts > 30))
 
 ```{r, echo=FALSE}
 plot_1 = ggplot(filter(Train_copy_continuas, Number.of.Open.Accounts <= 30), aes(y=1, x=Number.of.Open.Accounts))+
-  geom_violin() +
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
   geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
   scale_y_continuous(NULL, labels = NULL)+
   # scale_x_continuous(breaks = c(0, 200000, 400000, 600000, 800000),
@@ -309,7 +351,8 @@ plot_1 = ggplot(filter(Train_copy_continuas, Number.of.Open.Accounts <= 30), aes
   theme_bw()
 
 plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Number.of.Open.Accounts))+
-  geom_violin() +
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
   geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
   scale_y_continuous(NULL, labels = NULL)+
   # scale_x_continuous(breaks = c(0, 20000000, 40000000, 60000000, 80000000, 100000000),
@@ -319,6 +362,10 @@ plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Number.of.Open.Accounts))+
 
 grid.arrange(plot_2, plot_1, ncol = 1)
 ```
+De la anterior gráfica podríamos hablar de un patron, en donde podríamos hablar de que si el cliente presenta más de 50 unidades en la variable `Number.of.Open.Accounts`, la probabilidad de `Fully Paid` sería 100%.
+
+Para esta variable se propone el filtro de valores presuntamente atípicos (Years.of.Credit.History < 30).
+
 
 - `Months.since.last.delinquent`
 
@@ -337,7 +384,8 @@ nrow(filter(Train_copy_continuas, Months.since.last.delinquent > 85))
 
 ```{r, echo=FALSE}
 plot_1 = ggplot(filter(Train_copy_continuas, Months.since.last.delinquent <= 85), aes(y=1, x=Months.since.last.delinquent))+
-  geom_violin() +
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
   geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
   scale_y_continuous(NULL, labels = NULL)+
   # scale_x_continuous(breaks = c(0, 200000, 400000, 600000, 800000),
@@ -346,7 +394,8 @@ plot_1 = ggplot(filter(Train_copy_continuas, Months.since.last.delinquent <= 85)
   theme_bw()
 
 plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Months.since.last.delinquent))+
-  geom_violin() +
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
   geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
   scale_y_continuous(NULL, labels = NULL)+
   # scale_x_continuous(breaks = c(0, 20000000, 40000000, 60000000, 80000000, 100000000),
@@ -356,6 +405,7 @@ plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Months.since.last.delinquent))+
 
 grid.arrange(plot_2, plot_1, ncol = 1)
 ```
+Para esta variable se propone el filtro de valores presuntamente atípicos (Years.of.Credit.History < 85).
 
 2do grupo:
 `Maximum.Open.Credit` y
@@ -363,24 +413,24 @@ grid.arrange(plot_2, plot_1, ncol = 1)
 
 
 ```{r, echo=FALSE}
-train_selected = select(Train_copy_continuas, Maximum.Open.Credit, Current.Loan.Amount)
-train_long_form1 = gather(train_selected, key = "variable", value = "valor")
+train_selected = select(Train_copy_continuas, Loan.Status, Maximum.Open.Credit, Current.Loan.Amount)
+train_long_form1 = gather(train_selected, key = "variable", value = "valor", -Loan.Status)
 
 ggplot(train_long_form1, aes(y=variable, x=valor))+
-  geom_boxplot()+
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
   # geom_jitter()+
   stat_summary(fun=mean, colour="darkred", geom="point",
                shape=18, size=3, show.legend=FALSE)+
   scale_x_continuous(NULL, breaks = c(0,  100000000, 200000000, 400000000, 600000000, 800000000),
                      labels = c("0", "100M", "200M", "400M","600M", "800M"))+
   scale_y_discrete(NULL)+
+  ggtitle("Violin & Boxplot + jitter por clase (1 = Fully Paid, 0 = Charged Off)")+
   theme_bw()
 ```
-Se sospecha visualmente que en Current.Loan.Amount existe un dato outlier muy marcado cercano a los 100M, pero dicho outlier, no solo es un dato sino que pertenece a un subconjunto que representa el 4to cuartil con 4712 obs (13.77% del total).
+Para ambas variables, se vuelve caso de estudio análizar los subgrupos de outliers que se pueden visualizar en la gráfica con la finalidad de evaluar patrones de cumplimiento o la permanencia de estos registros en el ajuste del modelo.
 
-Por lo tanto se vuelve caso de estudio análisar este subgrupo de outliers para evaluar la permanencia de estos registros en el ajuste del modelo.
-
-- `Current.Loan.Amount`
+- Análisis particular de la variable `Current.Loan.Amount`
 
 Visualizamos los cuartiles de la variable `Current.Loan.Amount`
 
@@ -388,7 +438,7 @@ Visualizamos los cuartiles de la variable `Current.Loan.Amount`
 quantiles_("Current.Loan.Amount")
 ```
 
-En este punto cabe destacar que el 75% de los valores del vector Current.Loan.Amount son menores o iguales a 544,016.2. 
+En este punto cabe destacar que el 75% de los valores del vector `Current.Loan.Amount` son menores o iguales a 544,016.2. 
 
 Dado que parece que los valores del cuarto cuartil son tan extremos para sugerirnos filtrarlos del estudio, pero en conteo representan 8,551 observaciones, se decide hacer un estudio de la distribución de los datos en el cuarto cuartil para evaluar si se pueden recuperar algunas observaciones. Es claro que un modelo no se va ajustar apropiadamente a registros con valores de cantidad de deuda actual de 500 mil y de 90 millones en una de las variables regresoras, y si se ajusta, no será el mejor modelo o la variable perdera significancia estadística en el modelo. 
 
@@ -398,7 +448,8 @@ En el análisis del cuarto cuartil, que son valores mayores a 544,016.2, se pued
 ```{r, echo=FALSE}
 df_temp = filter(Train_copy_continuas, Current.Loan.Amount > 544016.2 )
 plot1 = ggplot(df_temp, aes(y=1,x=Current.Loan.Amount))+
-  geom_violin()+
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
   scale_x_continuous(breaks = c(545000, 24500000, 76000000, 90000000),
                      labels = c("0.545M", "24.5M", "76M", "90M"))+
   scale_y_continuous(NULL, labels = NULL)+
@@ -416,37 +467,58 @@ plot2 = ggplot(df_temp, aes(Current.Loan.Amount))+
 
 grid.arrange(plot1, plot2, ncol = 1)
 ```
-Y dado que los valores de la izquierda de la curva bimodal no son tan extremos como los de la parte derecha, nos planteamos la idea de tomar los de la izquierda y filtrar los valores extremos de la derecha. Dichos valores de la curva izquierda bimodal toman la siguiente distribución, con valor mínimo de 544,016.2 y máximo de 24.5 M, como no lo indica la anterior gráfia, que en conteo son 3,839 observaciones y tienen la siguiente distribución.
-
+Y dado que los valores de la izquierda de la curva bimodal no son tan extremos como los de la parte derecha, nos planteamos la idea de separar la gráfica anterior para un análisis más a fondo. 
+Los valores de la curva izquierda bimodal toman la siguiente distribución, con valor mínimo de 544,016.2 y máximo de 24.5 M, como no lo indica la anterior gráfia, que en conteo son 3,839 observaciones y tienen la siguiente distribución. Por su parte, Los valores de la curva derecha bimodal toman la siguiente distribución, con valor mínimo de 50M y máximo de 24l5 M, como no lo indica la anterior gráfia, que en conteo son 4,712 observaciones y tienen la siguiente distribución.
 ```{r, echo=FALSE}
 df_temp = filter(Train_copy_continuas, Current.Loan.Amount > 544016.2 )
 df_temp = filter(df_temp, Current.Loan.Amount < 24500000 )
 
-ggplot(df_temp, aes(y=1, x=Current.Loan.Amount))+
-  geom_violin()+
+plot_1 = ggplot(df_temp, aes(y=1, x=Current.Loan.Amount))+
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
   geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
-  geom_jitter(alpha=0.2)+
   scale_y_continuous(NULL, labels = NULL)+
   scale_x_continuous(breaks = c(550000, 600000, 650000, 700000, 750000, 800000),
                      labels = c("550k", "600k", "650k", "700k", "750k", "800k"))+
-  ggtitle("Análisis del 4to cuartil de la variable Current.Loan.Amount (valores > 544,016.2)")+
+  ggtitle("Análisis del 4to cuartil de la variable Current.Loan.Amount (544,016.2 < Valores < 24.5M)")+
   theme_bw()
+
+df_temp = filter(Train_copy_continuas, Current.Loan.Amount > 50000000 )
+
+plot_2 = ggplot(df_temp, aes(y=1, x=Current.Loan.Amount))+
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
+  geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
+  scale_y_continuous(NULL, labels = NULL)+
+  scale_x_continuous(breaks = c(100000000-4, 100000000-2,  100000000, 100000000+2),
+                     labels = c("$99,999,996", "$99,999,998", "$100,000,000",
+                                "$100,000,002")
+                     )+
+  scale_color_manual(values = c("turquoise3"))+
+  ggtitle("Análisis del 4to cuartil de la variable Current.Loan.Amount (valores > 50M)")+
+  theme_bw()
+
+grid.arrange(plot_1, plot_2, ncol = 1)
 ```
 
-Por lo que en conclusión, en el análisis univariado de la variable `Current.Loan.Amount` y al poder observar la cota superior aproximada a la que debemos delimitarla para restringir valores extremos, el modelo se ajustara con todas aquellas obervaciones que sean menores o iguales a 800,000 (por redondeo), que representaran un 86.2% de las obervaciones de esta variable y que adoptan la siguiente distribución.
+Con la gráfica anterior podríamos afirmar que cualquier registro que tenga un valor mayor a 50M en la variable `Current.Loan.Amount` adoptara un 1 (o `Fully Paid`) en la variable respuesta, por lo que podríamos quitar filtrar dichos registros con estos valores en la muestra para mejorar el ajuste, e incluirlos en un filtro posterior a la predicción del modelo ajustado.
+
+Por lo que en conclusión, en el análisis univariado de la variable `Current.Loan.Amount` y al poder observar la cota superior aproximada a la que debemos delimitarla para restringir valores extremos, con la finalidad de generar un mejor ajuste, el modelo se ajustara con todas aquellas obervaciones que sean menores o iguales a 800,000 (por redondeo), estableciendo en este punto el filtro propuesto pora esta variable, que representaran un 86.2% de las obervaciones de esta variable y que adoptan la siguiente distribución.
 
 ```{r, echo=FALSE}
 plot_1 = ggplot(filter(Train_copy_continuas, Current.Loan.Amount <= 80000000), aes(y=1, x=Current.Loan.Amount))+
-  geom_violin() +
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
   geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
   scale_y_continuous(NULL, labels = NULL)+
   scale_x_continuous(breaks = c(0, 200000, 400000, 600000, 800000),
                      labels = c("0", "200k", "400k", "600k", "800k"))+
-  ggtitle("Variable Current.Loan.Amount posterior al filtro (valores < 80M)")+
+  ggtitle("Variable Current.Loan.Amount posterior al filtro (valores < 800K)")+
   theme_bw()
 
 plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Current.Loan.Amount))+
-  geom_violin() +
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
   geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
   scale_y_continuous(NULL, labels = NULL)+
   scale_x_continuous(breaks = c(0, 20000000, 40000000, 60000000, 80000000, 100000000),
@@ -456,18 +528,53 @@ plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Current.Loan.Amount))+
 
 grid.arrange(plot_2, plot_1, ncol = 1)
 ```
+La idea de este análisis particular es por un lado acotar la muestra eliminando valores extremos, y establecer un filtro de clásificación posterior a la predicción con el modelo ajustado.
+Por lo que el resto de variables que superen este limite establecido a críterio para la variable `Current.Loan.Amount`, en el filtro manual por análisis exploratorio posterior a la predicción del modelo ajustado, serán calificadas automaticamente como `Fully Paid` (1).
 
-Finalmente, se procede a recopilar los IDs de dichos registros para al finalizar el análisis exploratorio, hacer el filtro del dataset inicial ya que podría darse el caso que en otras variables se ajuste otro filtro.
+- Análisis particular de la variable `Maximum.Open.Credit`
 
-
-Por otro y sin ahondar mucho en la variable `Maximum.Open.Credit`, para eliminar valores extremos en el mismo sentido de la variable previa `Current.Loan.Amount` se establece la cota superior en `80M`. Esto bajo la lógica de que, si el tope máximo de la deuda actual es 80M es porque tienes un crédito otorgado máximo por esta cantidad. Este filtro posiblemente cambie en busqueda de un mejor ajuste del modelo, dado que el análisis de cuartiles nos indica que el 3er cuartil de `Maximum.Open.Credit` es un valor menor o igual a 697,531, sin embargo la lógica antes mencionada impera hasta este momento dle análisis.
+Dada la gráfica de comparación del grupo 2 (referenciar), se presume que si separamos los valores de `Maximum.Open.Credit` por Fully Paid (1) o Charged Off (0), encontraremos diferencias importantes en la distribución.
 
 ```{r}
-quantiles_("Maximum.Open.Credit")
+plot_1 = ggplot(filter(Train_copy_continuas, Loan.Status == 1), aes(y=1, x=Maximum.Open.Credit))+
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
+  geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
+  scale_y_continuous(NULL, labels = NULL)+
+  scale_x_continuous(breaks = c(0, 200000000, 400000000, 600000000, 800000000),
+                     labels = c("0", "200M", "400M", "600M", "800M"))+
+  scale_color_manual(values = c("deepskyblue"))+
+  ggtitle("Variable Maximum.Open.Credit para clientes con Loan.Status = Fully Paid")+
+  theme_bw()
+
+plot_2 = ggplot(filter(Train_copy_continuas, Loan.Status == 0), aes(y=1, x=Maximum.Open.Credit))+
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
+  geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
+  scale_y_continuous(NULL, labels = NULL)+
+  scale_x_continuous(breaks = c(0, 25000000, 50000000, 75000000, 100000000),
+                     labels = c("0", "25M", "50M", "75M", "100M"))+
+  ggtitle("Variable Maximum.Open.Credit para clientes con Loan.Status = Charged Off")+
+  theme_bw()
+
+plot_3 = ggplot(Train_copy_continuas, aes(y=1, x=Maximum.Open.Credit))+
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
+  geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
+  scale_y_continuous(NULL, labels = NULL)+
+  scale_x_continuous(breaks = c(0, 200000000, 400000000, 600000000, 800000000),
+                     labels = c("0", "200M", "400M", "600M", "800M"))+
+  ggtitle("Variable Maximum.Open.Credit")+
+  theme_bw()
+
+grid.arrange(plot_3, plot_2, plot_1, ncol = 1)
 ```
+Por un lado el valor máximo de la variable `Maximum.Open.Credit` cuando la variable `Loan.Status` es igual a Fully Paid (1) es de 798M, por el otro este mismo valor máximo pero para cuando la variable `Loan.Status` es igual a Charged Off (0) es de 98M. Con lo anterior podríamos establecer otro filtro manual por análisis exploratorio posterior a la predicción del modelo ajustado en donde todos los registros que adopen un valor superior a 100M `Maximum.Open.Credit` serán clásificados como `Fully Paid` (1).
+
+Para esta variable se propone el filtro de valores presuntamente atípicos (Maximum.Open.Credit < 800K).
 
 3er grupo:
-- `Annual.Income`
+- Análisis particular de la variable `Annual.Income`
 
 Visualizando los cuantiles de `Annual.Income`.
 
@@ -478,23 +585,25 @@ quantiles_("Annual.Income")
 Destacar que el 75% de los valores del vector Annual.Income son menores o iguales a 1,726,247 El número de observaciones en el 4to cuartil es de 8551 con un valor máximo de 30,838,994, por lo que un filtro eliminando toda esta submuestra nos haría perder una buena parte de la muestra. Por lo que decidimos hacer un análisis más a fondo para encontrar el punto en donde solo filtremos los valores que sean más extremos.
 
 
-Con el apoyo visual de la anterior gráfica podemos decidir filtrar todas aquellas observaciones de la variable Annual.Income que sean mayores a 4000000 De esta forma, eliminariamos 572 variables de la muestra, representando un 1.67% de la misma.
+Con el apoyo visual de la anterior gráfica podemos decidir filtrar todas aquellas observaciones de la variable Annual.Income que sean mayores a 4000000 De esta forma, para el filtro de las sumuestras eliminariamos 572 variables de la muestra, representando un 1.67% de la misma.
 
 ```{r, echo=FALSE}
 nrow(filter(Train_copy_continuas, Annual.Income > 4000000))
 ```
 ```{r, echo=FALSE}
 plot_1 = ggplot(filter(Train_copy_continuas, Annual.Income <= 4000000), aes(y=1, x=Annual.Income))+
-  geom_violin() +
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
   geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
   scale_y_continuous(NULL, labels = NULL)+
   scale_x_continuous(breaks = c(0, 1000000, 2000000, 3000000, 4000000, 5000000),
                      labels = c("0", "1M", "2M", "3M", "4M", "5M"))+
-  ggtitle("Variable Annual.Income posterior al filtro (valores < 4000000)")+
+  ggtitle("Variable Annual.Income posterior al filtro (valores < 4M)")+
   theme_bw()
 
 plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Annual.Income))+
-  geom_violin() +
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
   geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
   scale_y_continuous(NULL, labels = NULL)+
   scale_x_continuous(breaks = c(0, 5000000, 10000000, 20000000, 30000000),
@@ -504,9 +613,10 @@ plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Annual.Income))+
 
 grid.arrange(plot_2, plot_1, ncol = 1)
 ```
+Para esta variable no se encuentran patrones de cumplimiento y se propone el filtro de valores presuntamente atípicos (Annual.Income < 4M).
 
 4to grupo:
-- `Current.Credit.Balance`
+- Análisis particular de la variable `Current.Credit.Balance`
 
 ```{r}
 quantiles_("Current.Credit.Balance")
@@ -520,29 +630,34 @@ Con el apoyo visual de la siguiente gráfica pudimos decidir filtrar todas aquel
 ```{r, echo=FALSE, include=FALSE}
 nrow(filter(Train_copy_continuas, Current.Credit.Balance > 1000000))
 ```
+
 ```{r, echo=FALSE}
 plot_1 = ggplot(filter(Train_copy_continuas, Current.Credit.Balance <= 1000000), aes(y=1, x=Current.Credit.Balance))+
-  geom_violin() +
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
   geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
   scale_y_continuous(NULL, labels = NULL)+
   scale_x_continuous(breaks = c(0, 250000, 500000, 750000),
                      labels = c("0", "250K", "500K", "750K"))+
-  ggtitle("Variable Current.Credit.Balance posterior al filtro (valores < 1000000)")+
+  ggtitle("Variable Current.Credit.Balance posterior al filtro (valores < 1M)")+
   theme_bw()
 
 plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Current.Credit.Balance))+
-  geom_violin() +
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
   geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
   scale_y_continuous(NULL, labels = NULL)+
   scale_x_continuous(breaks = c(0, 2000000, 4000000, 6000000),
                      labels = c("0", "2M", "4M", "6M"))+
-  ggtitle("Variable Annual.Income previo al filtro")+
+  ggtitle("Variable Current.Credit.Balance previo al filtro")+
   theme_bw()
 
 grid.arrange(plot_2, plot_1, ncol = 1)
 ```
+Para esta variable no se encuentran patrones de cumplimiento y se propone el filtro de valores presuntamente atípicos (Current.Credit.Balance < 1M).
 
-- `Monthly.Debt`
+
+- Análisis particular de la variable `Monthly.Debt`
 
 Visualizando los quantiles de `Monthly.Debt`
 
@@ -557,9 +672,11 @@ Con el apoyo visual de la siguiente gráfica pudimos decidir filtrar todas aquel
 ```{r, echo=FALSE, include=FALSE}
 nrow(filter(Train_copy_continuas, Monthly.Debt > 50000))
 ```
+
 ```{r}
 plot_1 = ggplot(filter(Train_copy_continuas, Monthly.Debt <= 50000), aes(y=1, x=Monthly.Debt))+
-  geom_violin() +
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
   geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
   scale_y_continuous(NULL, labels = NULL)+
   scale_x_continuous(breaks = c(0, 10000, 20000, 30000, 40000, 50000),
@@ -568,7 +685,8 @@ plot_1 = ggplot(filter(Train_copy_continuas, Monthly.Debt <= 50000), aes(y=1, x=
   theme_bw()
 
 plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Monthly.Debt))+
-  geom_violin() +
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
   geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
   scale_y_continuous(NULL, labels = NULL)+
   scale_x_continuous(breaks = c(0, 25000, 50000, 100000, 150000, 200000),
@@ -578,11 +696,12 @@ plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Monthly.Debt))+
 
 grid.arrange(plot_2, plot_1, ncol = 1)
 ```
+Para esta variable se encuentran patrones de cumplimiento en aquellos clientes con valores en `Monthly.Debt` mayores a 125K, por lo que esta observación pasa a formar parte del filtro manual por análisis exploratorio posterior a la predicción del modelo ajustado en donde todos los registros que adopen un valor superior a 125K `Monthly.Debt` serán clásificados como `Fully Paid` (1). Además, se propone el filtro de valores presuntamente atípicos (Current.Credit.Balance < 1M).
 
 6to grupo:
-- `Credit.Score`
+- Análisis particular de la variable `Credit.Score`
 
-La situación de la distribución de los valores parece ser un poco similar al caso de la variable `Current.Loan.Amount`, por lo que se buscara filtrar los registros de aquellas observaciones extremas para la variable Credit.Score en estudio. Cuando la media el score crediticio se encuentra en 1048.483, los valores de esta variable mayores a 5mil empiezan a perder mucho sentido, generandonos dudas sobre si estos datos se recopilaron apropiadamente o son inexactos como para ponerles un tope.
+La situación de la distribución de los valores parece ser un poco similar al caso de la variable `Current.Loan.Amount`, por lo que se buscara proponer filtrar los registros de aquellas observaciones extremas para la variable Credit.Score en estudio. Cuando la media el score crediticio se encuentra en 1048.483, los valores de esta variable mayores a 5mil empiezan a perder mucho sentido, generandonos dudas sobre si estos datos se recopilaron apropiadamente o son inexactos como para ponerles un tope.
 
 Por un lado se análizan los cuartiles del vector y se elaboran dos gráficas de cajas y bigotes más una capa de violin, además de un histógrama: una para valores que se encuentre en el primer, segundo y tercer cuartil y otra para el cuarto cuartil.
 
@@ -591,11 +710,12 @@ quantiles_("Credit.Score")
 ```
 
 ```{r}
-train_selected = Train_copy_continuas %>% filter(Credit.Score <= 738) %>% select(Credit.Score)
-train_long_form8 = gather(train_selected, key = "variable", value = "valor")
+train_selected = Train_copy_continuas %>% filter(Credit.Score <= 738) %>% select(Credit.Score, Loan.Status)
+train_long_form8 = gather(train_selected, key = "variable", value = "valor", -Loan.Status)
 
 plot_1 = ggplot(train_long_form8, aes(y=variable, x=valor))+
-  geom_violin() +
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
   geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
   # geom_jitter()+ 
   stat_summary(fun=mean, colour="darkred", geom="point",
@@ -604,11 +724,12 @@ plot_1 = ggplot(train_long_form8, aes(y=variable, x=valor))+
   ggtitle(glue("Credit.Score posterior al filtro (valores menores o iguales a 753)"))+
   theme_bw()
 
-train_selected = Train_copy_continuas %>% select(Credit.Score)
-train_long_form9 = gather(train_selected, key = "variable", value = "valor")
+train_selected = Train_copy_continuas %>% select(Credit.Score, Loan.Status)
+train_long_form9 = gather(train_selected, key = "variable", value = "valor", -Loan.Status)
 
 plot_2 = ggplot(train_long_form9, aes(y=variable, x=valor))+
-  geom_violin() +
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
   geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
   # geom_jitter()+ 
   stat_summary(fun=mean, colour="darkred", geom="point",
@@ -619,6 +740,39 @@ plot_2 = ggplot(train_long_form9, aes(y=variable, x=valor))+
 
 grid.arrange(plot_2, plot_1, ncol = 1)
 ```
+```{r}
+train_selected = Train_copy_continuas %>% select(Credit.Score, Loan.Status)
+train_long_form9 = gather(train_selected, key = "variable", value = "valor", -Loan.Status)
+
+plot_1 = ggplot(filter(train_long_form9, Loan.Status == 1), aes(y=variable, x=valor))+
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
+  geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
+  # geom_jitter()+ 
+  stat_summary(fun=mean, colour="darkred", geom="point",
+               shape=18, size=3, show.legend=FALSE)+
+  scale_y_discrete(NULL)+
+  scale_color_manual(values = c("deepskyblue"))+
+  ggtitle(glue("Credit.Score para clientes con Loan.Status = 1"))+
+  theme_bw()
+
+
+plot_2 = ggplot(filter(train_long_form9, Loan.Status == 0), aes(y=variable, x=valor))+
+  geom_jitter(aes(color=Loan.Status))+
+  geom_violin(alpha=0.5) +
+  geom_boxplot(width = 0.1, fill = "white", alpha = 0.5)+
+  # geom_jitter()+ 
+  stat_summary(fun=mean, colour="darkred", geom="point",
+               shape=18, size=3, show.legend=FALSE)+
+  scale_y_discrete(NULL)+
+  ggtitle(glue("Credit.Score para clientes con Loan.Status = 0"))+
+  theme_bw()
+
+grid.arrange(plot_2, plot_1, ncol = 1)
+```
+
+
+Para esta variable si se encuentran patrones claros de incumplimiento en aquellos clientes con valores en `Credit.Score` mayores a 6K, por lo que esta observación pasa a formar parte del filtro manual por análisis exploratorio posterior a la predicción del modelo ajustado en donde todos los registros que adopen un valor superior a 6K `Credit.Score` serán clásificados como `Charged off` (0). Además, se propone el filtro de valores presuntamente atípicos (Current.Credit.Balance < 753).
 
 7mo grupo:
 `Tax.Liens` y
@@ -651,6 +805,7 @@ EN EL PROPOSITO DEL CRÉDITO:
 EN LAS BANCARROTAS:
 - El 65% de los clientes declara nunca haber caído en bancarrota, le sigue el 25% con al menos una bancarrota.
 - El grupo, por proposito del crédito, que predomina en una bancarrota declarada es aquel grupo que declara solicitar el crédito para "moving"
+- La mediana del numero máximo de creditos abiertos se relaciona negativamente con el número de bancarrotas. Entre más bancarrotas es menor el numero de créditos abiertos.
 
 EN LA DEUDA ACTUAL DEL CLIENTE:
 - La mediana de la deuda tiene una relación negativa con el aumento en el credit scoring, a mayor credit score menor es la mediana (falta corroborar la media dado outliers en altos credit scores)
@@ -665,16 +820,71 @@ EN LOS AÑOS DE HISTORIAL CREDITICIO:
 EN EL BALANCE ACTUAL DEL CREDITO:
 - La mediana del balance mantiene una relacion positiva con el maximo de creditos abiertos.
 
-EN EL NUMERO DE BANCARROTAS:
+EN EL CREDIT SCORING:
+- Todos aquellos clientes que presentan un credit score > 5,800, también presentan el valor de `Charged off` en la variable de respuesta binaria `Loan.Status`.
 
-- La mediana del numero máximo de creditos abiertos se relaciona negativamente con el número de bancarrotas. Entre más bancarrotas es menor el numero de créditos abiertos.
+
+Configuración del filtro manual por análisis exploratorio posterior a la predicción del modelo ajustado:
+
+La variable Loan.Status adoptara el valor de 1 (`Fully Paid`) cuando:
+- El registro presente más de 50 unidades en la variable `Number.of.Open.Accounts`.
+- El registro presente un valor mayor a 50M en la variable `Current.Loan.Amount`
+- El registro presente un valor mayor a 100M en la variable `Maximum.Open.Credit`
+- El registro presente un valor mayor a 125K en la variable `Monthly.Debt`
+
+La variable Loan.Status adoptara el valor de 0 (`Charged off`) cuando:
+- El registro presente un valor mayor a 6K en la variable `Credit.Score`
 
 
 #### Análisis multivariado
 
-```{r}
+Comportamiento del Annual.Income vs Monthly.Debt (color by Current.Loan.Amount) con faceteado por Term
 
+```{r}
+ggplot(Train_copy, aes(Annual.Income, Monthly.Debt, color=Current.Loan.Amount))+
+  geom_point()+
+  facet_wrap(~Term, ncol = 2)+
+  theme_bw()
 ```
+
+Comportamiento del Annual.Income vs Monthly.Debt (color by Current.Loan.Amount) con faceteado por LoanStatus
+
+```{r}
+ggplot(Train_copy, aes(Annual.Income, Monthly.Debt, color=Loan.Status))+
+  geom_point()+
+  facet_wrap(~Term, ncol = 2)+
+  theme_bw()
+```
+
+
+```{r}
+ggplot(Train_copy, aes(Annual.Income, Monthly.Debt, color=Loan.Status))+
+  geom_point()+
+  facet_wrap(~Purpose, ncol =5)+
+  theme_bw()
+```
+
+
+```{r}
+ggplot(Train_copy, aes(Annual.Income, Monthly.Debt, color=Loan.Status))+
+  geom_point()+
+  facet_wrap(~Years.in.current.job, ncol =4)+
+  theme_bw()
+```
+
+```{r}
+ggplot(Train_copy, aes(Annual.Income, Monthly.Debt, color=Loan.Status))+
+  geom_point()+
+  facet_wrap(~Home.Ownership, ncol =4)+
+  theme_bw()
+```
+
+
+
+
+
+
+
 
 
 En este apartado generamos los nuevos datasets a estudiar en siguientes scripts
