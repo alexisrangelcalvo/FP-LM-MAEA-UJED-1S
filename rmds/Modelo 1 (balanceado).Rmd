@@ -27,6 +27,7 @@ library(glmulti) # Automated model selection and model-averaging. (see more here
 library(boot)
 library(vcd)
 library(ggside)
+library(ROSE)
 ```
 
 ```{r, carga de datos, echo=FALSE}
@@ -46,6 +47,26 @@ Test_intern_1 = dplyr::select(Test_intern_1, -c(ID))
 #Train_copy_1$Loan.Status = as.factor(Train_copy_1$Loan.Status) 
 ```
 
+```{r}
+table(Train_intern_1$Loan.Status)
+```
+
+```{r}
+
+Train_intern_1$Term = as.factor(Train_intern_1$Term)
+Train_intern_1$Years.in.current.job = as.factor(Train_intern_1$Years.in.current.job)
+Train_intern_1$Home.Ownership = as.factor(Train_intern_1$Home.Ownership)
+Train_intern_1$Purpose = as.factor(Train_intern_1$Purpose)
+str(Train_intern_1)
+```
+
+```{r}
+Train_intern_1 <- ROSE(Loan.Status ~ ., data = Train_intern_1, seed = 1)$data
+```
+
+```{r}
+table(Train_intern_1$Loan.Status)
+```
 
 
 ### Modelo de regresión logística.

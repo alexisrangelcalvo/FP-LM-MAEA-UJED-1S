@@ -76,7 +76,7 @@ Fuente: https://budgeting.thenest.com/account-paid-full-vs-chargeoff-23884.html
 
 #### Objetivos
 
-El presente rmarkdown tiene como objetivo elaborar un análisis exploratorio para la busqueda de patrones de cumplimiento en las variables a emplear en el modelo de regresión lógistica, así como también proponer limites y filtros a cada variable continua en caso de existir valores presuntamente atipicos. Estas propuestas de filtros se evaluaran y se propondran en el análisis univariado y serán valorados al final del rmarkdown para generar 3 muestras (muestra completa, submuestra 1 y submuestra 2) con las que en cada una se ajustaran modelos logit, para finalmente comparar los resultados de cada modelo y elegir el de mejor performance contra el estadístico de prueba (% de aciertos).
+El presente rmarkdown tiene como objetivo elaborar un análisis exploratorio para la busqueda de patrones de cumplimiento en las variables a emplear en el modelo de regresión lógistica, así como también proponer limites y filtros a cada variable continua en caso de existir valores presuntamente atipicos. Estas propuestas de filtros se evaluaran y se propondran en el análisis univariado y serán valorados al final del rmarkdown para generar 2 muestras (muestra completa y submuestra 1) con las que en cada una se ajustaran modelos logit, para finalmente comparar los resultados de cada modelo y elegir el de mejor performance contra el estadístico de prueba (% de aciertos).
 
 #### Valores faltantes
 
@@ -86,10 +86,10 @@ missmap(Train_copy, main = "Missing values vs observed")
 
 #### Análisis univariado
 
-Herramienta Explore
-```{r}
-#explore(Train_copy)
-```
+<!-- Herramienta Explore -->
+<!-- ```{r} -->
+<!-- #explore(Train_copy) -->
+<!-- ``` -->
 
 
 
@@ -121,7 +121,6 @@ gg1 = ggplot(Train_copy, aes(fct_infreq(Loan.Status)))+
 
 ######  Análisis univariado variables nominales y ordinales
 
-<!-- Paso numero 1, pasar a factores todas estas variables nominales y ordinales -->
 
 <!-- a. Term -->
 ```{r, echo=FALSE}
@@ -230,13 +229,11 @@ Para el modelo de regresión logistica se plantean tres escenarios:
 
 Todos, con su respectivo Train y Test, para la validación cruzada por medio del estadístico PRESS y el Cp de Mallow así como la validación cruzada por k-folds.
 
-Para el modelado con muestras reducidas, se requiere un análisis estadístico univariado, bivariado y multivariado. Para esto y dado que son varias variables continuas, probablemente no tenga sentido meter todas en un solo gráfico de boxplot, por lo que buscamos rangos similares para segmentar en 2 o 3 grupos. Esto requiere inicialmente meter todas en un boxplot y manualmente separarlas
+Para el modelado con la submuestra, se requiere un análisis estadístico univariado, bivariado y multivariado que complemente la perdida de información. Para esto y dado que son varias variables continuas, probablemente no tenga sentido meter todas en un solo gráfico de boxplot, por lo que buscamos rangos similares para segmentar en 5 grupos para poderapreciar correctamente las distribuciones.
 
 
 1er grupo de análisis:
-`Years.of.Credit.History`, 
-`Number.of.Open.Accounts` y
-`Months.since.last.delinquent`
+`Years.of.Credit.History`, `Number.of.Open.Accounts` y `Months.since.last.delinquent`
 
 ```{r, echo=FALSE}
 Train_copy_continuas = Train_copy %>% select(Loan.Status, Current.Loan.Amount, Credit.Score, Annual.Income, Monthly.Debt, Years.of.Credit.History, Months.since.last.delinquent, Number.of.Open.Accounts, Current.Credit.Balance, Maximum.Open.Credit, Bankruptcies, Tax.Liens)
@@ -256,12 +253,6 @@ ggplot(train_long_form, aes(y=variable, x=valor))+
   ggtitle("Violin & Boxplot + jitter por clase (1 = Fully Paid, 0 = Charged Off)")+
   theme_bw()
 ```
-
-
-```{r, include=FALSE}
-gather(select(Train_copy_continuas, -c(Maximum.Open.Credit, Current.Loan.Amount, Annual.Income, Current.Credit.Balance, Monthly.Debt, Credit.Score, Bankruptcies, Tax.Liens)), key = "variable", value = "valor", -Loan.Status)
-```
-
 
 Con la aterior gráfica podemos:
 Descartar patrones de cumplimiento por las variables `Years.of.Credit.History`, 
@@ -408,8 +399,7 @@ grid.arrange(plot_2, plot_1, ncol = 1)
 Para esta variable se propone el filtro de valores presuntamente atípicos (Years.of.Credit.History < 85).
 
 2do grupo:
-`Maximum.Open.Credit` y
-`Current.Loan.Amount`
+`Maximum.Open.Credit` y `Current.Loan.Amount`
 
 
 ```{r, echo=FALSE}
@@ -775,8 +765,7 @@ grid.arrange(plot_2, plot_1, ncol = 1)
 Para esta variable si se encuentran patrones claros de incumplimiento en aquellos clientes con valores en `Credit.Score` mayores a 6K, por lo que esta observación pasa a formar parte del filtro manual por análisis exploratorio posterior a la predicción del modelo ajustado en donde todos los registros que adopen un valor superior a 6K `Credit.Score` serán clásificados como `Charged off` (0). Además, se propone el filtro de valores presuntamente atípicos (Current.Credit.Balance < 753).
 
 7mo grupo:
-`Tax.Liens` y
-`Bankruptcies`
+`Tax.Liens` y `Bankruptcies`
 
 Se decide no emplear filtros para este grupo.
 
@@ -824,7 +813,7 @@ EN EL CREDIT SCORING:
 - Todos aquellos clientes que presentan un credit score > 5,800, también presentan el valor de `Charged off` en la variable de respuesta binaria `Loan.Status`.
 
 
-Configuración del filtro manual por análisis exploratorio posterior a la predicción del modelo ajustado:
+- Configuración del filtro manual por análisis exploratorio posterior a la predicción del modelo ajustado:
 
 La variable Loan.Status adoptara el valor de 1 (`Fully Paid`) cuando:
 - El registro presente más de 50 unidades en la variable `Number.of.Open.Accounts`.
@@ -836,63 +825,12 @@ La variable Loan.Status adoptara el valor de 0 (`Charged off`) cuando:
 - El registro presente un valor mayor a 6K en la variable `Credit.Score`
 
 
-#### Análisis multivariado
-
-Comportamiento del Annual.Income vs Monthly.Debt (color by Current.Loan.Amount) con faceteado por Term
-
-```{r}
-ggplot(Train_copy, aes(Annual.Income, Monthly.Debt, color=Current.Loan.Amount))+
-  geom_point()+
-  facet_wrap(~Term, ncol = 2)+
-  theme_bw()
-```
-
-Comportamiento del Annual.Income vs Monthly.Debt (color by Current.Loan.Amount) con faceteado por LoanStatus
-
-```{r}
-ggplot(Train_copy, aes(Annual.Income, Monthly.Debt, color=Loan.Status))+
-  geom_point()+
-  facet_wrap(~Term, ncol = 2)+
-  theme_bw()
-```
-
-
-```{r}
-ggplot(Train_copy, aes(Annual.Income, Monthly.Debt, color=Loan.Status))+
-  geom_point()+
-  facet_wrap(~Purpose, ncol =5)+
-  theme_bw()
-```
-
-
-```{r}
-ggplot(Train_copy, aes(Annual.Income, Monthly.Debt, color=Loan.Status))+
-  geom_point()+
-  facet_wrap(~Years.in.current.job, ncol =4)+
-  theme_bw()
-```
-
-```{r}
-ggplot(Train_copy, aes(Annual.Income, Monthly.Debt, color=Loan.Status))+
-  geom_point()+
-  facet_wrap(~Home.Ownership, ncol =4)+
-  theme_bw()
-```
-
-
-
-
-
-
-
-
 
 En este apartado generamos los nuevos datasets a estudiar en siguientes scripts
 
 
 - Modelado con toda la muestra.
-- Modelado con una muestra reducida (filtro en dos variables continuas)
-- Modelado con una muestra aun más reducida (filtro en x variables continuas)
+- Modelado con una submuestra (filtro en 11 variables continuas)
 
 
 Muestra completa
@@ -907,24 +845,7 @@ chart.Correlation(select(Train_copy_1_continues, -c(Tax.Liens)), histogram=TRUE,
 ```
 
 
-Muestra reducida no. 1, en donde se propondrá un modelo con un 81% de la muestra original
-```{r}
-Train_copy_1 = Train_copy %>% filter(Current.Loan.Amount <= 80000000, Credit.Score <= 753, Maximum.Open.Credit <= 80000000)
-
-print(glue("Train_copy en un inicio tuvó {format(nrow(Train_copy), big.mark = ',')} obs"))
-print(glue("Train_copy_1 ahora tiene {format(nrow(Train_copy_1), big.mark = ',')} obs"))
-print(glue("Se redujo el dataset en un {(1 - (nrow(Train_copy_1)/nrow(Train_copy)))*100 }%"))
-
-write_csv(Train_copy_1, "../datasets/muestra_reducida_1.csv")
-```
-```{r}
-Train_copy_1_continues = Train_copy_1 %>% select(Current.Loan.Amount, Credit.Score, Annual.Income, Monthly.Debt, Years.of.Credit.History, Months.since.last.delinquent, Number.of.Open.Accounts, Current.Credit.Balance, Maximum.Open.Credit, Bankruptcies, Tax.Liens)
-
-chart.Correlation(select(Train_copy_1_continues, -c(Tax.Liens)), histogram=TRUE, pch=19, main = "Matriz de correlaciones con histógrama muestra reducida no. 1")
-```
-
-
-Muestra reducida no. 2, en donde se propondrá un modelo con el 32% de la muestra original.
+Muestra reducida no. 1, en donde se propondrá un modelo con el 32% de la muestra original.
 ```{r}
 Train_copy_2 = Train_copy %>% filter(Current.Loan.Amount <= 80000000, Credit.Score <= 753, Maximum.Open.Credit <= 80000000, Years.of.Credit.History <= 40, Number.of.Open.Accounts <= 30, Months.since.last.delinquent <= 30, Current.Loan.Amount <= 80000000, Annual.Income <= 4000000, Current.Credit.Balance <= 1000000, Monthly.Debt <= 50000, Credit.Score <= 753)
 
@@ -942,7 +863,7 @@ chart.Correlation(select(Train_copy_1_continues, -c(Tax.Liens)), histogram=TRUE,
 ```
 
 
-La continuación de este proyecto, que es la parte del modelado, continuará en los rmarkdown modelo 1, modelo 2 y modelo 3 respectivamente. En cada uno de estos rmarkdowns donde se plantea ajustar el mejor modelo dada la submuestra analizada, separando Train y Test, empleando selección de variables, validación cruzada y bootstrap, finalizando con generar un archivo RData de cada modelo así como un diagnostico con el estadístico PRESS.
+La continuación de este proyecto, que es la parte del modelado, continuará en los rmarkdown modelo 1 y modelo 2. En cada uno de estos rmarkdowns donde se plantea ajustar el mejor modelo dada la submuestra analizada, separando Train y Test, empleando selección de variables, validación cruzada y bootstrap, finalizando con generar un archivo RData de cada modelo así como un diagnostico con el estadístico PRESS.
 
 La idea principal de esto es llevar cada modelo a una validación cruzada simulada con la muestra Test que será evaluada en el proyecto final de clase.
 
