@@ -1,0 +1,15 @@
+---
+title: "Predicciones"
+author: "Alexis Rangel"
+date: "2023-05-01"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, carga del modelo, echo=True}
+load("../models/Modelo_1.RData")
+```
+
