@@ -242,9 +242,14 @@ De entrada, el mejor modelo por AIC que propone la funcion glmulti() es el mismo
 
 - Elaborando modelos alternativos a `modelo_1`
 
+```{r}
+Train_intern_1$Purpose <- factor(Train_intern_1$Purpose)
+levels(Train_intern_1$Purpose)
+```
+
+
 - Modelo 1.1
 ```{r}
-#Modelo 1.2
 modelo_1_1 = glm(data = Train_intern_1, 
               formula = Loan.Status~ Term + Purpose + Current.Loan.Amount + Credit.Score + Annual.Income + Monthly.Debt + Years.of.Credit.History, family = "binomial")
 summary(modelo_1_1)
@@ -276,11 +281,10 @@ Salida de consola y código no.7 (Ajustando modelo no. 1.2)-
 Del modelo base y los dos modelos que derivan de este, que además presentan la ventaja de contar con una feature menos, se evaluara cada uno por validación cruzada y por MSPR para solo quedarnos con el mejor.
 
 - Validación por k-fold para el modelo base
-```{r}
-suppressWarnings(
-  MSE_kf_1 <- cv.glm(data = Test_intern_1,
+```{r, warning=FALSE}
+MSE_kf_1 = cv.glm(data = Test_intern_1,
                glmfit = modelo_1, 
-               K = 50))
+               K = 50)
 MSE_kf_1$delta
 ```
 Salida de consola y código no.8 (MSPR por K-Pliegues del modelo no. 1)-
@@ -290,26 +294,22 @@ Interpretando  `$delta`:
 El primer valor representa el error medio cuadrático promedio para los K pliegues (MSPR o Mean Squared Prediction Error), y el segundo valor representa la desviación estándar de los errores medios cuadráticos de los K pliegues.
 
 - Validación por k-fold para el modelo 1.1
-```{r}
-suppressWarnings(
-  MSE_kf_1_1 <- cv.glm(data = Test_intern_1,
-               glmfit = modelo_1_1, 
-               K = 50))
+```{r, warning=FALSE}
+MSE_kf_1_1 = cv.glm(data = Test_intern_1,
+            glmfit = modelo_1_1, K = 50)
 MSE_kf_1_1$delta
 ```
-Salida de consola y código no.9 (MSPR por K-Pliegues del modelo no. 1.1)-
+Salida de consola y código no.9 (MSE por K-Pliegues del modelo no. 1.1)-
 
 - Validación por k-fold para el modelo 1.2
-```{r}
-suppressWarnings(
-  MSE_kf_1_2 <- cv.glm(data = Test_intern_1,
-               glmfit = modelo_1_2, 
-               K = 50))
+```{r, warning=FALSE}
+MSE_kf_1_2 = cv.glm(data = Test_intern_1,
+            glmfit = modelo_1_2, K = 50)
 MSE_kf_1_2$delta
 ```
-Salida de consola y código no. 10 (MSPR por K-Pliegues del modelo no. 1.2)-
+Salida de consola y código no. 10 (MSE por K-Pliegues del modelo no. 1.2)-
 
-Concluimos que los dos modelos que derivan del modelo base (donde la diferencia solo se da en que el primero incluye Years.of.Credit.History y el segundo Years.in.current.job) con solo 7 features presentan ligeramente un MSPR menor, contra el conjunto de Test, que el modelo base además de incluir una variable menos, por lo que dichos modelos pasan a la etapa de remuestreo y el estudio de la matriz de confusión con la finalidad de proponer el de mejor performance en estas 2 instancias.
+Concluimos que los dos modelos que derivan del modelo base (donde la diferencia solo se da en que el primero incluye Years.of.Credit.History y el segundo Years.in.current.job) con solo 7 features presentan ligeramente un MSE menor, contra el conjunto de Test, que el modelo base además de incluir una variable menos, por lo que dichos modelos pasan a la etapa de remuestreo y el estudio de la matriz de confusión con la finalidad de proponer el de mejor performance en estas 2 instancias.
 
 
 ##### Modelo no 1.1
@@ -458,7 +458,7 @@ exac1 = ggplot(df_especificidad, aes(x=Corte_1, y=Exactitud_1))+
   geom_line()+
   geom_point(aes(x = Corte_1[which.max(Exactitud_1)], y = Exactitud_1[which.max(Exactitud_1)]), 
              shape = 21, size = 5, fill = "white", color = "blue") +
-  geom_text(aes(x = Corte_1[which.max(Exactitud_1)], y = Exactitud_1[which.max(Exactitud_1)] - 0.03, label = glue("Max \n{Corte_1[which.max(Exactitud_1)]}")),
+  geom_text(aes(x = Corte_1[which.max(Exactitud_1)], y = Exactitud_1[which.max(Exactitud_1)] - 0.06, label = glue("Max \n{Corte_1[which.max(Exactitud_1)]}")),
             hjust = 0.5) +
   scale_y_continuous(breaks=c(0.2, 0.4, 0.5, 0.6, 0.7, 0.8), labels = c("20%", "40%", "50%", "60%", "70%", "80%"),
                      name = "Exactitud")+
@@ -473,6 +473,8 @@ Gráfica no. 5 (punto de corte ideal para maximizar la exactitud (vs Test))-
 ```{r}
 corte_optimo_1 = which(Exactitud_1==max(Exactitud_1))
 Corte_1[corte_optimo_1][1]
+
+Corte_modelo_1_1 = Corte_1[corte_optimo_1][1]
 ```
 Salida de consola y código no. 11 (Corte óptimo para máximizar la exactitud)-
 
@@ -825,7 +827,7 @@ exac2 = ggplot(df_especificidad, aes(x=Corte_1, y=Exactitud_2))+
   scale_y_continuous(breaks=c(0.2, 0.4, 0.5, 0.6, 0.7, 0.8), labels = c("20%", "40%", "50%", "60%", "70%", "80%"),
                      name = "Exactitud")+
   scale_x_continuous("Punto de corte")+
-  ggtitle("Punto de corte ideal para máximizar la exactitud de la clásificación (modelo 1.2)")+
+  ggtitle("Punto de corte ideal para máximizar la exactitud (modelo 1.2)")+
   theme_bw()
 exac2
 ```
@@ -836,6 +838,8 @@ Gráfica no. 12 (punto de corte ideal para maximizar la exactitud (vs Test) en m
 ```{r}
 corte_optimo_1 = which(Exactitud_2==max(Exactitud_2))
 Corte_1[corte_optimo_1][1]
+
+Corte_modelo_1_2 = Corte_1[corte_optimo_1][1]
 ```
 Salida de consola y código no. 18 (Corte ótimo para máximizar la exactitud en modelo no 1.2)-
 
@@ -879,6 +883,9 @@ legend(x=.7, y=.4, legend = c("Simple","Completo"),
 title("Curva ROC del modelo 1.2")
 ```
 Gráfica no. 13 (Curva ROC modelo 1.2)-
+
+
+
 
 ######  Identificando los coeficientes modelo 1.2
 
@@ -1039,7 +1046,7 @@ df <- data.frame(valor = c(bootstrap_vector_modelo_1_1, bootstrap_vector_modelo_
 
 medias <- tapply(df$valor, df$grupo, mean)
 
-ggplot(df, aes(x = valor, fill = grupo)) +
+gg_boots1 = ggplot(df, aes(x = valor, fill = grupo)) +
   geom_histogram(alpha = 0.6, position = "identity", bins = 100) +
   scale_fill_manual(values = c("blue", "red")) +
   labs(x = "Valor", y = "Frecuencia", fill = "Grupo")+
@@ -1047,9 +1054,20 @@ ggplot(df, aes(x = valor, fill = grupo)) +
   geom_vline(xintercept = mean(bootstrap_vector_modelo_1_1), color = "blue")+
   geom_vline(xintercept = mean(bootstrap_vector_modelo_1_2), color = "red")+
   theme_bw()
+gg_boots1
 ```
 Gráfica no. 16 (Compraración exactitud del modelo 1.1 y modelo 1.2)-
 
+```{r}
+plot(Desempeno_roc_1,col="darkblue")
+plot(Desempeno_roc_2,col="darkgreen", add = T)
+plot(Desempeno1_prueba, col = "firebrick", add = T)
+legend(x=.7, y=.5, legend = c("Simple","Modelo 1.1", "Modelo 1.2"),
+      lwd = 2, col = c("red", "darkblue","darkgreen"),
+      title = "Modelos")
+title("Curvas ROC modelado 1")
+```
+Gráfica no. 17 (Compraración ROC del modelo 1.1 y modelo 1.2)-
 
 ##### Conclusiones Generales
 
@@ -1060,7 +1078,7 @@ Con base en el estadístico de prueb (% total de aciertos) el mejor modelo a emp
 
 ```{r}
 cfmx_modelo1 = cfmx1
-save(modelo_1_1, cfmx_modelo1, file = "../models/Modelo_1.RData")
+save(modelo_1_1, cfmx_modelo1, Corte_modelo_1_1, file = "../models/Modelo_1.RData")
 ```
 
 <!-- Se carga tal documento con -->

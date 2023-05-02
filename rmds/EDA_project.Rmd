@@ -185,10 +185,10 @@ d. Purpose
 
 Por un lado, se unifica el valor de la variable "Other" y "other" en purpose con la funcion tolower(), y por otro, se valorará en el ajuste del modelo la reducción de dimensiones en Train_copy
 ```{r, echo=FALSE}
-unique(Train_copy$Purpose)
+#unique(Train_copy$Purpose)
 Train_copy$Purpose = tolower(Train_copy$Purpose)
 
-#unique(Train_copy$Purpose)
+unique(Train_copy$Purpose)
 ```
 
 ```{r, echo=FALSE}

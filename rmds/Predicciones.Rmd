@@ -8,8 +8,62 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+### Objetivo del presente rmarkdown
 
+
+```{r, message=FALSE, echo=FALSE}
+library(tidyverse)
+```
+
+- Cargamos el mejor modelo y el conjunto de datos Test para hacer las predicciones que seran las evaluadas en este proyecto.
 ```{r, carga del modelo, echo=True}
 load("../models/Modelo_1.RData")
+load("../brief/DatosParaProyecto.RData")
 ```
+
+```{r}
+Test$Term = as.factor(Test$Term)
+Test$Years.in.current.job = as.factor(Test$Years.in.current.job)
+Test$Home.Ownership = as.factor(Test$Home.Ownership)
+Test$Purpose = as.factor(Test$Purpose)
+#Modificando la columna de purpose para unificar variables (caso término other y Other)
+Test$Purpose = tolower(Test$Purpose)
+```
+```{r}
+names(Train)
+```
+
+
+```{r}
+str(Test)
+```
+
+Generando el RData proyecto final
+```{r}
+prediccion_final = predict(object = modelo_1_1,
+                    newdata = Test, type = "response")
+Test$Loan.Status.Prob = prediccion_final
+# Test$Loan.Status = ifelse(Test$Loan.Status.Prob > Corte_modelo_1_1, "Fully Paid", "Charged Off")
+Test$Loan.Status = ifelse(Test$Loan.Status.Prob > 0.451, "Fully Paid", "Charged Off")
+
+ggplot(Test, aes(y="preds", x=Loan.Status.Prob))+
+  geom_jitter(alpha=0.5, color="violetred")+
+  geom_violin(alpha=0.5)+
+  geom_boxplot(width = 0.3, fill = "white", alpha = 0.5)+
+  scale_x_continuous(labels=c("0%", "25%", "50%", "75%", "100%"), name = "Respuesta")+
+  scale_y_discrete(labels=c(""), name=NULL)+
+  ggtitle("Predicciones finales para el conjunto Test")+
+  geom_vline(xintercept = 0.451, color = "firebrick")+
+  theme_bw()
+```
+
+Guardando el dataframe
+```{r}
+save(Test, file = "../brief/Proyecto Final.RData")
+```
+
+
+Gráficas del resultado final
+
+
 
