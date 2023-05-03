@@ -58,14 +58,11 @@ Train_intern_1$Purpose = as.factor(Train_intern_1$Purpose)
 ```
 
 
-
-
-
 ### Modelo de regresión logística.
 
 ##### Alcance y objetivo del modelo.
 
-El presente ejercicio se plantea ajustar un modelo que tenga el mejor performance con la muestra completa, con la finalidad de ser evaluado ante la muestra de Test.
+El presente ejercicio se plantea ajustar un modelo que tenga el mejor performance con la muestra completa, con la finalidad de ser evaluado ante la muestra de Test correspondiente al examen final del curso.
 
 ##### Ajuste del modelo
 
@@ -1028,7 +1025,7 @@ ggplot(df, aes(x = valor, fill = grupo)) +
 plot(Desempeno_roc_1,col="darkblue")
 plot(Desempeno_roc_2,col="darkgreen", add = T)
 plot(Desempeno1_prueba, col = "firebrick", add = T)
-legend(x=.6, y=.5, legend = c("Simple","Modelo 1.1", "Modelo 1.2"),
+legend(x=.6, y=.5, legend = c("Simple","Modelo 2.1", "Modelo 2.2"),
       lwd = 2, col = c("red", "darkblue","darkgreen"),
       title = "Modelos")
 title("Curvas ROC modelado 2")
@@ -1036,12 +1033,12 @@ title("Curvas ROC modelado 2")
 Gráfica no. 17 (Compraración ROC del modelo 1.1 y modelo 1.2)-
 
 
-##### Conclusiones
+##### Conclusiones Generales
 
 Dado que las pruebas con MSPR y accuracy por matriz de confusión fueron tecnicamente similares, decidimos optar por quedarnos con el modelo_2_1 con 6 features porque es un modelo con menos que nos arroja una media del estadśitico de prueba ligeramente mayor.  
 
 
-Del mejor modelo, podemos interpretar de la anterior salida de consola los ODDS ratios que:
+Del mejor modelo de la comparación, podemos interpretar de la anterior salida de consola los ODDS ratios que:
 
 - Si la variable `Current.Loan.Amount` aumenta en 1,000 unidades, este evento estara asociado con una disminución del 7.5% en las probabilidades del pago al corriente (`Fully Paid`).
 - Si la variable `Credit.Score` aumenta en 100 unidades, este evento estara asociado con un aumento del 68%% en las probabilidades del pago al corriente (`Fully Paid`).

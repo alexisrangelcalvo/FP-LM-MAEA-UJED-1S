@@ -57,6 +57,20 @@ ggplot(Test, aes(y="preds", x=Loan.Status.Prob))+
   theme_bw()
 ```
 
+```{r}
+df = as.data.frame(table(Test$Loan.Status))
+
+ggplot(df, aes(x = "", y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity", color = "white") +
+  coord_polar("y", start=0) +
+  theme_void() +
+  theme(legend.position = "top") +
+  scale_fill_hue(c = 45, l = 80, h = c(0, 360)) +
+  geom_text(aes(label = paste(Var1, Freq)), position = position_stack(vjust = 0.5), size = 4)
+```
+
+
+
 Guardando el dataframe
 ```{r}
 save(Test, file = "../brief/Proyecto Final.RData")

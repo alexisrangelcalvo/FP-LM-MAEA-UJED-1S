@@ -1071,7 +1071,7 @@ Gráfica no. 17 (Compraración ROC del modelo 1.1 y modelo 1.2)-
 
 ##### Conclusiones Generales
 
-Con base en el estadístico de prueb (% total de aciertos) el mejor modelo a emplear en esta muestra de estudio, con base en el análisis de selección de variables, validación cruzada y remuestreo o bootstraping, resultaría ser el modelo 1.1. Aunque es de mencionar que las diferencias son minimas, por lo que es importante tomar en cuenta los resultados del EDA para la toma de esta desición.
+Con base en el estadístico de prueba (% total de aciertos) el mejor modelo a emplear en esta muestra de estudio, con base en el análisis de selección de variables, validación cruzada y remuestreo o bootstraping, resultaría ser el modelo 1.1. Aunque es de mencionar que las diferencias son minimas, por lo que es importante tomar en cuenta los resultados del EDA para la toma de esta desición.
 
 
 ##### Exportando modelo al directorio
