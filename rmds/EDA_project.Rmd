@@ -76,7 +76,7 @@ Fuente: https://budgeting.thenest.com/account-paid-full-vs-chargeoff-23884.html
 
 #### Objetivos
 
-El presente rmarkdown tiene como objetivo elaborar un análisis exploratorio para la busqueda de patrones de cumplimiento en las variables a emplear en el modelo de regresión lógistica, así como también proponer limites y filtros a cada variable continua en caso de existir valores presuntamente atipicos. Estas propuestas de filtros se evaluaran y se propondran en el análisis univariado y serán valorados al final del rmarkdown para generar 2 muestras (muestra completa y submuestra 1) con las que en cada una se ajustaran modelos logit, para finalmente comparar los resultados de cada modelo y elegir el de mejor performance contra el estadístico de prueba (% de aciertos).
+El presente rmarkdown tiene como objetivo elaborar un análisis exploratorio para el reconocimiento del dataset en la busqueda la lógica del negocio, como de patrones de cumplimiento en las variables a emplear en el modelo de regresión lógistica, así como también proponer limites y filtros a cada variable continua en caso de existir valores presuntamente atipicos. Estas propuestas de filtros se evaluaran y se propondran en el análisis univariado y serán valorados al final del rmarkdown para generar 2 muestras (muestra completa y submuestra 1) con las que en cada una se ajustaran modelos logit, para finalmente comparar los resultados de cada modelo y elegir el de mejor performance contra el estadístico de prueba (% de aciertos).
 
 #### Valores faltantes
 

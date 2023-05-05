@@ -1,0 +1,130 @@
+---
+title: "EMA"
+author: "Alexis Rangel"
+date: "2023-05-04"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+- Cargamos el mejor modelo y el conjunto de datos Train y Test para hacer análisis exploratorio del modelo
+```{r, carga del modelo, echo=True}
+load("../models/Modelo_1.RData")
+load("../brief/DatosParaProyecto.RData")
+Train = filter(Train, "Purpose" != "renewable_energy")
+```
+
+
+Explanatory Model Analysis for models is whats Exploratory Data Analysis is for Data
+
+Model agnostic approach
+relationship between the input and the output
+level explanations vs global explanations
+```{r}
+library(tidyverse)
+library(DALEX)
+```
+
+```{r}
+Train$Term = as.factor(Train$Term)
+Train$Years.in.current.job = as.factor(Train$Years.in.current.job)
+Train$Home.Ownership = as.factor(Train$Home.Ownership)
+Train$Purpose = tolower(Train$Purpose)
+Train$Purpose = as.factor(Train$Purpose)
+Train$Loan.Status = ifelse(Train$Loan.Status  == "Fully Paid", 1, 0)
+class(Train$Loan.Status)
+```
+
+
+
+Explaining the model
+
+```{r}
+modelo_1_1_explained = explain(
+                        modelo_1_1,
+                        data = Train,
+                        y = Train$Loan.Status,
+                        label = "Logistic Regression"
+                      )
+class(modelo_1_1_explained)
+```
+
+Explicaciones desde la libreria DALEX:
+
+```{r}
+single_observation = Train[sample(1:nrow(Train), 1), ]
+
+modelo_1_1_explained %>% predict(single_observation)
+```
+ 
+```{r}
+#single_observation = Train[sample(1:nrow(Train), 1), ]
+single_observation = Train[8972, ]
+modelo_1_1_explained %>% predict(single_observation)
+modelo_1_1_explained %>% predict_parts(new_observation = single_observation) %>% plot(title="Break-Down for single obs with Fully Paid response")
+```
+
+Identificando el charged off (id = 11434)
+
+```{r}
+modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down for single obs with Fully Paid response")
+```
+
+```{r}
+plot_fp1 = modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down Fully Paid response",  variables=c("Annual.Income"))
+plot_fp_2 = modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down Fully Paid response",  variables=c("Credit.Score"))
+plot_fp_3= modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down Fully Paid response",  variables=c("Current.Loan.Amount"))
+plot_fp_4= modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down Fully Paid response",  variables=c("Monthly.Debt"))
+```
+
+```{r}
+plot_fp1
+```
+
+```{r}
+plot_fp_2
+```
+
+```{r}
+plot_fp_3
+#510 y 260
+```
+
+```{r}
+plot_fp_4
+```
+
+Charged off
+
+```{r}
+single_observation = Train[11434, ]
+modelo_1_1_explained %>% predict(single_observation)
+modelo_1_1_explained %>% predict(single_observation)
+modelo_1_1_explained %>% predict_parts(new_observation = single_observation) %>% plot(title="Break-Down for single obs with Charged Off response")
+```
+
+```{r}
+plot_cf1 = modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down for single obs with Charged Off response",  variables=c("Annual.Income"))
+plot_cf_2 = modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down for single obs with Charged Off response",  variables=c("Credit.Score"))
+plot_cf_3= modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down for single obs with Charged Off response",  variables=c("Current.Loan.Amount"))
+plot_cf_4= modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down for single obs with Charged Off response",  variables=c("Monthly.Debt"))
+```
+
+
+```{r}
+plot_cf1
+```
+```{r}
+plot_cf_2
+```
+
+```{r}
+plot_cf_3
+```
+
+```{r}
+plot_cf_4
+```
+

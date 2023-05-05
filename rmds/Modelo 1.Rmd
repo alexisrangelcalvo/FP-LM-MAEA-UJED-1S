@@ -958,7 +958,11 @@ Salida de consola y código no. 23 (Odds ratios para el modelo no 1.2)-
 De lo que podemos concluir que las variables con mayor incidencia son:
 - la variable nominal `Purpose` con el valor `buy a car`.
 - la variable nominal `Purpose` con el valor `take a trip`.
-- la variable nominal `Purpose` con el valor `home improvements`.
+- la variable nominal `Purpose` con el valor `house improvements`.
+- la variable nominal `Purpose` con el valor `other`.
+- la variable nominal `Purpose` con el valor `medical bills`.
+- la variable nominal `Term` con el valor `Short`.
+- la variable nominal `Purpose` con el valor `small_business`.
 
 ###### Evaluación supuestos
 
