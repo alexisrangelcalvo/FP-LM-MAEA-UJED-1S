@@ -106,10 +106,10 @@ modelo_1_1_explained %>% predict_parts(new_observation = single_observation) %>%
 ```
 
 ```{r}
-plot_cf1 = modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down for single obs with Charged Off response",  variables=c("Annual.Income"))
-plot_cf_2 = modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down for single obs with Charged Off response",  variables=c("Credit.Score"))
-plot_cf_3= modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down for single obs with Charged Off response",  variables=c("Current.Loan.Amount"))
-plot_cf_4= modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down for single obs with Charged Off response",  variables=c("Monthly.Debt"))
+plot_cf1 = modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down Charged Off response",  variables=c("Annual.Income"))
+plot_cf_2 = modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down Charged Off response",  variables=c("Credit.Score"))
+plot_cf_3= modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down Charged Off response",  variables=c("Current.Loan.Amount"))
+plot_cf_4= modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down Charged Off response",  variables=c("Monthly.Debt"))
 ```
 
 
@@ -118,6 +118,7 @@ plot_cf1
 ```
 ```{r}
 plot_cf_2
+#510 y 260
 ```
 
 ```{r}

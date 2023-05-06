@@ -2,7 +2,9 @@
 title: "Predicciones"
 author: "Alexis Rangel"
 date: "2023-05-01"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -10,18 +12,19 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 ### Objetivo del presente rmarkdown
 
+El presente script tiene como objetivo elaborar la predicción para el conjunto de prueba del proyecto final.
 
 ```{r, message=FALSE, echo=FALSE}
 library(tidyverse)
 ```
 
 - Cargamos el mejor modelo y el conjunto de datos Test para hacer las predicciones que seran las evaluadas en este proyecto.
-```{r, carga del modelo, echo=True}
+```{r, carga del modelo, echo=TRUE}
 load("../models/Modelo_1.RData")
 load("../brief/DatosParaProyecto.RData")
 ```
 
-```{r}
+```{r, echo=FALSE}
 Test$Term = as.factor(Test$Term)
 Test$Years.in.current.job = as.factor(Test$Years.in.current.job)
 Test$Home.Ownership = as.factor(Test$Home.Ownership)
@@ -29,19 +32,14 @@ Test$Purpose = as.factor(Test$Purpose)
 #Modificando la columna de purpose para unificar variables (caso término other y Other)
 Test$Purpose = tolower(Test$Purpose)
 ```
-```{r}
-names(Train)
-```
 
 
-```{r}
-str(Test)
-```
 
 Generando el RData proyecto final
 ```{r}
 prediccion_final = predict(object = modelo_1_1,
                     newdata = Test, type = "response")
+# punto de corte = 0.451
 Test$Loan.Status.Prob = prediccion_final
 # Test$Loan.Status = ifelse(Test$Loan.Status.Prob > Corte_modelo_1_1, "Fully Paid", "Charged Off")
 Test$Loan.Status = ifelse(Test$Loan.Status.Prob > 0.451, "Fully Paid", "Charged Off")
@@ -56,16 +54,14 @@ ggplot(Test, aes(y="preds", x=Loan.Status.Prob))+
   geom_vline(xintercept = 0.451, color = "firebrick")+
   theme_bw()
 ```
-
+Gráfica, código y salida de consola no. 1 (distribución variable de respuesta conjunto test)
 
 
 Guardando el dataframe
 ```{r}
-save(Test, file = "../brief/Proyecto Final.RData")
+write_csv(Test, "../datasets/Test_final.csv")
+save(Test, file = "../models/Proyecto Final.RData")
 ```
-
-
-Gráficas del resultado final
 
 
 

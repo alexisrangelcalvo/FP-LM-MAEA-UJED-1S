@@ -172,17 +172,12 @@ suppressWarnings(
 grid.arrange(plot_lrm_7, plot_lrm_8, plot_lrm_9, plot_lrm_10, plot_lrm_11, ncol = 2)
 )
 ```
+Gráfica no. 1 (Logit simple glm(Loan.Status ~. ) para la respuesta binaria en cada variable)
 
-
-Gráfica no. 1 (Logit simple glm(Loan.Status ~. ))
 
 ```{r, echo=FALSE}
 rm(plot_lrm_1, plot_lrm_2, plot_lrm_3, plot_lrm_4, plot_lrm_5, plot_lrm_6, plot_lrm_7, plot_lrm_8, plot_lrm_9, plot_lrm_10, plot_lrm_11)
 ```
-
-
-¿Qué se puede concluir del anterior GRID?
-Comparar respuesta binaria simple contra resultados de ODDS Ratios
 
 
 ######  Ajuste del modelo no. 1

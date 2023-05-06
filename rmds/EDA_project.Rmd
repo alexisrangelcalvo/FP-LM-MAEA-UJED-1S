@@ -2,7 +2,9 @@
 title: "EDA_project"
 author: "Alexis Rangel"
 date: "2023-04-16"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -15,7 +17,7 @@ Train_copy = Train
 Test_copy = Test
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, message=FALSE}
 library(tidyverse)
 library(explore)
 library(tidyr)
@@ -83,21 +85,16 @@ El presente rmarkdown tiene como objetivo elaborar un análisis exploratorio par
 ```{r, echo=FALSE}
 missmap(Train_copy, main = "Missing values vs observed")
 ```
+Gráfica no. 1 (Valores faltantes)
+
 
 #### Análisis univariado
-
-<!-- Herramienta Explore -->
-<!-- ```{r} -->
-<!-- #explore(Train_copy) -->
-<!-- ``` -->
-
-
 
 - Observamos la distribución desbalanceada de los registros a clásificar, en donde `Fully Paid` representa el 79.23% de la respuesta dicotómica.
 ```{r, echo=FALSE}
 table(Train_copy$Loan.Status)
 ```
-
+Código y salida de consola no. 1 (identificando datos desbalanceados)
 
 Inicialmente pasamos a binario el pago (`Fully Paid`) o el default (`Charged Off`) con un 1 y un 0 respectivamente.
 
@@ -106,7 +103,6 @@ Train_copy$Loan.Status = ifelse(Train_copy$Loan.Status  == "Fully Paid", 1, 0)
 Train_copy$Loan.Status = as.factor(Train_copy$Loan.Status)
 ```
 
-- Observamos la variable respuesta `Loan.Status`:
 ```{r, echo=FALSE}
 gg1 = ggplot(Train_copy, aes(fct_infreq(Loan.Status)))+
   geom_bar(stat="count", fill=c("steelblue", "firebrick"))+
@@ -119,12 +115,11 @@ gg1 = ggplot(Train_copy, aes(fct_infreq(Loan.Status)))+
   geom_text(stat = "count", aes(label = after_stat(format(count, big.mark = ","))), vjust = -0.5)
 ```
 
+
+
 ######  Análisis univariado variables nominales y ordinales
 
-
-<!-- a. Term -->
 ```{r, echo=FALSE}
-#class(Train_copy$Term)
 Train_copy$Term = as.factor(Train_copy$Term)
 
 gg2 = ggplot(Train_copy, aes(fct_infreq(Term)))+
@@ -138,7 +133,6 @@ gg2 = ggplot(Train_copy, aes(fct_infreq(Term)))+
   geom_text(stat = "count", aes(label = after_stat(format(count, big.mark = ","))), vjust = -0.5)
 ```
 
-<!-- b. Years.in.current.job -->
 ```{r, echo=FALSE}
 Train_copy$Years.in.current.job = as.factor(Train_copy$Years.in.current.job)
 my_palette = paletteer_c("ggthemes::Blue", length(unique(Train_copy$Years.in.current.job)))
@@ -175,11 +169,18 @@ gg4 = ggplot(Train_copy, aes(fct_infreq(Home.Ownership)))+
 ```
 
 
-```{r}
-grid.arrange(gg1, gg2, gg3, gg4, nrow = 2)
+```{r, echo=FALSE}
+grid.arrange(gg1, gg2, nrow = 1)
 ```
 
+```{r, echo=FALSE}
+gg3
+```
+```{r, echo=FALSE}
+gg4
+```
 
+Gráfica no. 2 (descriptivos de nuestras variables)
 
 d. Purpose
 
@@ -190,6 +191,7 @@ Train_copy$Purpose = tolower(Train_copy$Purpose)
 
 unique(Train_copy$Purpose)
 ```
+
 
 ```{r, echo=FALSE}
 Train_copy$Purpose = as.factor(Train_copy$Purpose)
@@ -212,6 +214,7 @@ ggplot(Train_copy, aes(fct_infreq(Purpose)))+
 # nuevo_vector <- ifelse(observaciones == "hombre", 1, ifelse(observaciones == "mujer", 2, obse
 ```
 
+Gráfica no. 3 (descriptivo variable purpose) 
 ```{r, echo=FALSE}
 # unique(Train_copy$Purpose)
 # Train_copy %>% filter(Purpose == "") %>% select(Purpose, Loan.Status)
@@ -254,6 +257,8 @@ ggplot(train_long_form, aes(y=variable, x=valor))+
   theme_bw()
 ```
 
+Gráfica no. 4 (distribución de variables) 
+
 Con la aterior gráfica podemos:
 Descartar patrones de cumplimiento por las variables `Years.of.Credit.History`, 
 `Number.of.Open.Accounts` y `Months.since.last.delinquent`.
@@ -286,6 +291,8 @@ quantiles_ <- function(var){
 ```{r, echo=FALSE}
 quantiles_("Years.of.Credit.History")
 ```
+Código y salida de consola no. 2 (cuantiles variable Years.of.Credit.History)
+
 Destacar que el 75% de los valores del vector Current.Loan.Amount son menores o iguales a 22.7, mientras que el valor máximo es 59.6. El número de observaciones en el 4to cuartil es de 8429, por lo que un filtro eliminando toda esta submuestra nos haría perder una buena parte de la muestra. Por lo que decidimos hacer un análisis más a fondo para encontrar el punto en donde solo filtremos los valores que sean más extremos.
 
 Con el apoyo visual de la siguiente gráfica pudimos decidir filtrar todas aquellas observaciones de la variable Years.of.Credit.History que sean mayores a 40. De esta forma, eliminariamos 401 variables de la muestra, representando un 1.17% de la misma.
@@ -313,6 +320,8 @@ plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Years.of.Credit.History))+
 
 grid.arrange(plot_2, plot_1, ncol = 1)
 ```
+Gráfica no. 5 (distribución de variables)
+
 Para esta variable se propone el filtro de valores presuntamente atípicos (Years.of.Credit.History < 40).
 
 - Análisis particular de `Number.of.Open.Accounts`
@@ -323,6 +332,8 @@ Visualizamos los cuartiles para `Number.of.Open.Accounts`
 ```{r}
 quantiles_("Number.of.Open.Accounts")
 ```
+Código y salida de consola no. 3 (cuantiles variable Number.of.Open.Accounts)
+
 Destacar que el 75% de los valores del vector Number.of.Open.Accounts son menores o iguales a 14 cuentas abiertas. El número de observaciones en el 4to cuartil es de 7793, por lo que un filtro eliminando toda esta submuestra nos haría perder una buena parte de la muestra. Por lo que decidimos hacer un análisis más a fondo para encontrar el punto en donde solo filtremos los valores que sean más extremos.
 
 Con el apoyo visual de la siguiente gráfica pudimos decidir filtrar todas aquellas observaciones de la variable Years.of.Credit.History que sean mayores a 30 De esta forma, eliminariamos 152 variables de la muestra, representando un 0.44% de la misma.
@@ -353,6 +364,8 @@ plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Number.of.Open.Accounts))+
 
 grid.arrange(plot_2, plot_1, ncol = 1)
 ```
+Gráfica no. 6 (distribución de variables)
+
 De la anterior gráfica podríamos hablar de un patron, en donde podríamos hablar de que si el cliente presenta más de 50 unidades en la variable `Number.of.Open.Accounts`, la probabilidad de `Fully Paid` sería 100%.
 
 Para esta variable se propone el filtro de valores presuntamente atípicos (Years.of.Credit.History < 30).
@@ -365,6 +378,8 @@ Visualizamos los cuartiles para `Months.since.last.delinquent`
 ```{r}
 quantiles_("Months.since.last.delinquent")
 ```
+Código y salida de consola no. 4 (cuantiles variable Number.of.Open.Accounts)
+
 Destacar que el 75% de los valores del vector Months.since.last.delinquent son menores o iguales a 51 meses, mientras que el valor máximo es 178. El número de observaciones en el 4to cuartil es de 8536, por lo que un filtro eliminando toda esta submuestra nos haría perder una buena parte de la muestra. Por lo que decidimos hacer un análisis más a fondo para encontrar el punto en donde solo filtremos los valores que sean más extremos.
 
 Con el apoyo visual de la siguiente gráfica pudimos decidir filtrar todas aquellas observaciones de la variable Months.since.last.delinquent que sean mayores a 51 De esta forma, eliminariamos 31 variables de la muestra, representando un 0.09% de la misma.
@@ -396,6 +411,8 @@ plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Months.since.last.delinquent))+
 
 grid.arrange(plot_2, plot_1, ncol = 1)
 ```
+Gráfica no. 7 (distribución de variables)
+
 Para esta variable se propone el filtro de valores presuntamente atípicos (Years.of.Credit.History < 85).
 
 2do grupo:
@@ -418,6 +435,8 @@ ggplot(train_long_form1, aes(y=variable, x=valor))+
   ggtitle("Violin & Boxplot + jitter por clase (1 = Fully Paid, 0 = Charged Off)")+
   theme_bw()
 ```
+Gráfica no. 8 (distribución de variables)
+
 Para ambas variables, se vuelve caso de estudio análizar los subgrupos de outliers que se pueden visualizar en la gráfica con la finalidad de evaluar patrones de cumplimiento o la permanencia de estos registros en el ajuste del modelo.
 
 - Análisis particular de la variable `Current.Loan.Amount`
@@ -427,6 +446,7 @@ Visualizamos los cuartiles de la variable `Current.Loan.Amount`
 ```{r, echo=FALSE}
 quantiles_("Current.Loan.Amount")
 ```
+Código y salida de consola no. 5 (cuantiles variable Current.Loan.Amount)
 
 En este punto cabe destacar que el 75% de los valores del vector `Current.Loan.Amount` son menores o iguales a 544,016.2. 
 
@@ -457,6 +477,8 @@ plot2 = ggplot(df_temp, aes(Current.Loan.Amount))+
 
 grid.arrange(plot1, plot2, ncol = 1)
 ```
+Gráfica no. 9 (distribución de variables)
+
 Y dado que los valores de la izquierda de la curva bimodal no son tan extremos como los de la parte derecha, nos planteamos la idea de separar la gráfica anterior para un análisis más a fondo. 
 Los valores de la curva izquierda bimodal toman la siguiente distribución, con valor mínimo de 544,016.2 y máximo de 24.5 M, como no lo indica la anterior gráfia, que en conteo son 3,839 observaciones y tienen la siguiente distribución. Por su parte, Los valores de la curva derecha bimodal toman la siguiente distribución, con valor mínimo de 50M y máximo de 24l5 M, como no lo indica la anterior gráfia, que en conteo son 4,712 observaciones y tienen la siguiente distribución.
 ```{r, echo=FALSE}
@@ -490,6 +512,8 @@ plot_2 = ggplot(df_temp, aes(y=1, x=Current.Loan.Amount))+
 
 grid.arrange(plot_1, plot_2, ncol = 1)
 ```
+Gráfica no. 10 (distribución de variables)
+
 
 Con la gráfica anterior podríamos afirmar que cualquier registro que tenga un valor mayor a 50M en la variable `Current.Loan.Amount` adoptara un 1 (o `Fully Paid`) en la variable respuesta, por lo que podríamos quitar filtrar dichos registros con estos valores en la muestra para mejorar el ajuste, e incluirlos en un filtro posterior a la predicción del modelo ajustado.
 
@@ -518,6 +542,8 @@ plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Current.Loan.Amount))+
 
 grid.arrange(plot_2, plot_1, ncol = 1)
 ```
+Gráfica no. 10 (distribución de variables)
+
 La idea de este análisis particular es por un lado acotar la muestra eliminando valores extremos, y establecer un filtro de clásificación posterior a la predicción con el modelo ajustado.
 Por lo que el resto de variables que superen este limite establecido a críterio para la variable `Current.Loan.Amount`, en el filtro manual por análisis exploratorio posterior a la predicción del modelo ajustado, serán calificadas automaticamente como `Fully Paid` (1).
 
@@ -559,6 +585,8 @@ plot_3 = ggplot(Train_copy_continuas, aes(y=1, x=Maximum.Open.Credit))+
 
 grid.arrange(plot_3, plot_2, plot_1, ncol = 1)
 ```
+Gráfica no. 11 (distribución de variables)
+
 Por un lado el valor máximo de la variable `Maximum.Open.Credit` cuando la variable `Loan.Status` es igual a Fully Paid (1) es de 798M, por el otro este mismo valor máximo pero para cuando la variable `Loan.Status` es igual a Charged Off (0) es de 98M. Con lo anterior podríamos establecer otro filtro manual por análisis exploratorio posterior a la predicción del modelo ajustado en donde todos los registros que adopen un valor superior a 100M `Maximum.Open.Credit` serán clásificados como `Fully Paid` (1).
 
 Para esta variable se propone el filtro de valores presuntamente atípicos (Maximum.Open.Credit < 800K).
@@ -571,13 +599,14 @@ Visualizando los cuantiles de `Annual.Income`.
 ```{r}
 quantiles_("Annual.Income")
 ```
+Código y salida de consola no. 6 (cuantiles variable Annual.Income)
 
 Destacar que el 75% de los valores del vector Annual.Income son menores o iguales a 1,726,247 El número de observaciones en el 4to cuartil es de 8551 con un valor máximo de 30,838,994, por lo que un filtro eliminando toda esta submuestra nos haría perder una buena parte de la muestra. Por lo que decidimos hacer un análisis más a fondo para encontrar el punto en donde solo filtremos los valores que sean más extremos.
 
 
 Con el apoyo visual de la anterior gráfica podemos decidir filtrar todas aquellas observaciones de la variable Annual.Income que sean mayores a 4000000 De esta forma, para el filtro de las sumuestras eliminariamos 572 variables de la muestra, representando un 1.67% de la misma.
 
-```{r, echo=FALSE}
+```{r, include=FALSE}
 nrow(filter(Train_copy_continuas, Annual.Income > 4000000))
 ```
 ```{r, echo=FALSE}
@@ -603,6 +632,8 @@ plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Annual.Income))+
 
 grid.arrange(plot_2, plot_1, ncol = 1)
 ```
+Gráfica no. 12 (distribución de variables)
+
 Para esta variable no se encuentran patrones de cumplimiento y se propone el filtro de valores presuntamente atípicos (Annual.Income < 4M).
 
 4to grupo:
@@ -611,13 +642,13 @@ Para esta variable no se encuentran patrones de cumplimiento y se propone el fil
 ```{r}
 quantiles_("Current.Credit.Balance")
 ```
-
+Código y salida de consola no. 7 (cuantiles variable Current.Credit.Balance)
 
 En este punto cabe destacar que el 75% de los valores del vector Current.Credit.Balance son menores o iguales a 327,180.4 El número de observaciones en el 4to cuartil es de 8,552, por lo que un filtro eliminando toda esta submuestra nos haría perder una buena parte de la muestra. Por lo que decidimos hacer un análisis más a fondo para encontrar el punto en donde solo filtremos los valores que sean más extremos.
 
 Con el apoyo visual de la siguiente gráfica pudimos decidir filtrar todas aquellas observaciones de la variable Current.Credit.Balance que sean mayores a 1000000 De esta forma, eliminariamos 588 variables de la muestra, representando un 1.71% de la misma.
 
-```{r, echo=FALSE, include=FALSE}
+```{r, include=FALSE}
 nrow(filter(Train_copy_continuas, Current.Credit.Balance > 1000000))
 ```
 
@@ -644,6 +675,8 @@ plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Current.Credit.Balance))+
 
 grid.arrange(plot_2, plot_1, ncol = 1)
 ```
+Gráfica no. 13 (distribución de variables)
+
 Para esta variable no se encuentran patrones de cumplimiento y se propone el filtro de valores presuntamente atípicos (Current.Credit.Balance < 1M).
 
 
@@ -654,12 +687,14 @@ Visualizando los quantiles de `Monthly.Debt`
 ```{r}
 quantiles_("Monthly.Debt")
 ```
+Código y salida de consola no. 8 (cuantiles variable Monthly.Debt)
+
 
 En este punto cabe destacar que el 75% de los valores del vector Monthly.Debt son menores o iguales a 24,554.97 El número de observaciones en el 4to cuartil es de 8,553, por lo que un filtro eliminando toda esta submuestra nos haría perder una buena parte de la muestra. Por lo que decidimos hacer un análisis más a fondo para encontrar el punto en donde solo filtremos los valores que sean más extremos.
 
 Con el apoyo visual de la siguiente gráfica pudimos decidir filtrar todas aquellas observaciones de la variable Current.Credit.Balance que sean mayores a 50,000 De esta forma, eliminariamos 781 variables de la muestra, representando un 2.28% de la misma.
 
-```{r, echo=FALSE, include=FALSE}
+```{r, include=FALSE}
 nrow(filter(Train_copy_continuas, Monthly.Debt > 50000))
 ```
 
@@ -686,6 +721,8 @@ plot_2 = ggplot(Train_copy_continuas, aes(y=1, x=Monthly.Debt))+
 
 grid.arrange(plot_2, plot_1, ncol = 1)
 ```
+Gráfica no. 14 (distribución de variables)
+
 Para esta variable se encuentran patrones de cumplimiento en aquellos clientes con valores en `Monthly.Debt` mayores a 125K, por lo que esta observación pasa a formar parte del filtro manual por análisis exploratorio posterior a la predicción del modelo ajustado en donde todos los registros que adopen un valor superior a 125K `Monthly.Debt` serán clásificados como `Fully Paid` (1). Además, se propone el filtro de valores presuntamente atípicos (Current.Credit.Balance < 1M).
 
 6to grupo:
@@ -698,6 +735,8 @@ Por un lado se análizan los cuartiles del vector y se elaboran dos gráficas de
 ```{r}
 quantiles_("Credit.Score")
 ```
+Código y salida de consola no. 9 (cuantiles variable Credit.Score)
+
 
 ```{r}
 train_selected = Train_copy_continuas %>% filter(Credit.Score <= 738) %>% select(Credit.Score, Loan.Status)
@@ -730,6 +769,8 @@ plot_2 = ggplot(train_long_form9, aes(y=variable, x=valor))+
 
 grid.arrange(plot_2, plot_1, ncol = 1)
 ```
+Gráfica no. 15 (distribución de variables)
+
 ```{r}
 train_selected = Train_copy_continuas %>% select(Credit.Score, Loan.Status)
 train_long_form9 = gather(train_selected, key = "variable", value = "valor", -Loan.Status)
@@ -761,7 +802,7 @@ plot_2 = ggplot(filter(train_long_form9, Loan.Status == 0), aes(y=variable, x=va
 grid.arrange(plot_2, plot_1, ncol = 1)
 ```
 
-
+Gráfica no. 16 (distribución de variables)
 Para esta variable si se encuentran patrones claros de incumplimiento en aquellos clientes con valores en `Credit.Score` mayores a 6K, por lo que esta observación pasa a formar parte del filtro manual por análisis exploratorio posterior a la predicción del modelo ajustado en donde todos los registros que adopen un valor superior a 6K `Credit.Score` serán clásificados como `Charged off` (0). Además, se propone el filtro de valores presuntamente atípicos (Current.Credit.Balance < 753).
 
 7mo grupo:
@@ -843,7 +884,7 @@ Train_copy_1_continues = Train_copy %>% select(Current.Loan.Amount, Credit.Score
 
 chart.Correlation(select(Train_copy_1_continues, -c(Tax.Liens)), histogram=TRUE, pch=19, main = "Matriz de correlaciones con histógrama muestra completa")
 ```
-
+Gráfica no. 16 (correlaciones muestra completa)
 
 Muestra reducida no. 1, en donde se propondrá un modelo con el 32% de la muestra original.
 ```{r}
@@ -862,6 +903,7 @@ Train_copy_1_continues = Train_copy_2 %>% select(Current.Loan.Amount, Credit.Sco
 chart.Correlation(select(Train_copy_1_continues, -c(Tax.Liens)), histogram=TRUE, pch=19, main = "Matriz de correlaciones con histógrama muestra reducida no. 2")
 ```
 
+Gráfica no. 17 (correlaciones submuestra)
 
 La continuación de este proyecto, que es la parte del modelado, continuará en los rmarkdown modelo 1 y modelo 2. En cada uno de estos rmarkdowns donde se plantea ajustar el mejor modelo dada la submuestra analizada, separando Train y Test, empleando selección de variables, validación cruzada y bootstrap, finalizando con generar un archivo RData de cada modelo así como un diagnostico con el estadístico PRESS.
 
