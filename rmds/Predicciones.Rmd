@@ -22,6 +22,7 @@ library(tidyverse)
 ```{r, carga del modelo, echo=TRUE}
 load("../models/Modelo_1.RData")
 load("../brief/DatosParaProyecto.RData")
+write_csv(Test, "../datasets/Test_inicial.csv")
 ```
 
 ```{r, echo=FALSE}

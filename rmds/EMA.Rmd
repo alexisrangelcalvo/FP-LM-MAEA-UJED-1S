@@ -2,44 +2,47 @@
 title: "EMA"
 author: "Alexis Rangel"
 date: "2023-05-04"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+### Objetivo del presente rmarkdown
+
+El presente script tiene como objetivo abordar ligeramente el proceso de explicación del modelo ajustado (Explanatory model analysis)
+
+
 - Cargamos el mejor modelo y el conjunto de datos Train y Test para hacer análisis exploratorio del modelo
-```{r, carga del modelo, echo=True}
+```{r, carga del modelo, echo=FALSE}
 load("../models/Modelo_1.RData")
 load("../brief/DatosParaProyecto.RData")
-Train = filter(Train, "Purpose" != "renewable_energy")
 ```
 
 
-Explanatory Model Analysis for models is whats Exploratory Data Analysis is for Data
+" Explanatory Model Analysis for models is whats Exploratory Data Analysis is for Data "
 
 Model agnostic approach
 relationship between the input and the output
 level explanations vs global explanations
-```{r}
+```{r, message=FALSE}
 library(tidyverse)
 library(DALEX)
+library(glue)
 ```
 
-```{r}
+```{r, echo=FALSE}
 Train$Term = as.factor(Train$Term)
 Train$Years.in.current.job = as.factor(Train$Years.in.current.job)
 Train$Home.Ownership = as.factor(Train$Home.Ownership)
 Train$Purpose = tolower(Train$Purpose)
 Train$Purpose = as.factor(Train$Purpose)
 Train$Loan.Status = ifelse(Train$Loan.Status  == "Fully Paid", 1, 0)
-class(Train$Loan.Status)
 ```
-
-
-
-Explaining the model
+### Instanciando el objeto que explica el modelo
 
 ```{r}
 modelo_1_1_explained = explain(
@@ -51,13 +54,17 @@ modelo_1_1_explained = explain(
 class(modelo_1_1_explained)
 ```
 
-Explicaciones desde la libreria DALEX:
+### Explicaciones desde la libreria DALEX para una observación random en particular:
 
 ```{r}
 single_observation = Train[sample(1:nrow(Train), 1), ]
-
+print(glue("Id observación {sample(1:nrow(Train), 1)}"))
 modelo_1_1_explained %>% predict(single_observation)
 ```
+
+Salida de consola y código no.1 (Prueba para solo una observación aleatoria)
+
+### Explicaciones desde la libreria DALEX para una observación en con respuesta Fully Paid:
  
 ```{r}
 #single_observation = Train[sample(1:nrow(Train), 1), ]
@@ -66,37 +73,39 @@ modelo_1_1_explained %>% predict(single_observation)
 modelo_1_1_explained %>% predict_parts(new_observation = single_observation) %>% plot(title="Break-Down for single obs with Fully Paid response")
 ```
 
-Identificando el charged off (id = 11434)
+Gráfica no. 1 (Break down para solo una observación con respuesta Fully Paid)
 
-```{r}
-modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down for single obs with Fully Paid response")
-```
 
-```{r}
+Identificando los perfiles "ceteris paribus" para la observación con respuesta Fully Paid
+
+```{r, echo=FALSE}
 plot_fp1 = modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down Fully Paid response",  variables=c("Annual.Income"))
 plot_fp_2 = modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down Fully Paid response",  variables=c("Credit.Score"))
 plot_fp_3= modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down Fully Paid response",  variables=c("Current.Loan.Amount"))
 plot_fp_4= modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down Fully Paid response",  variables=c("Monthly.Debt"))
 ```
 
-```{r}
+
+
+```{r, echo=FALSE}
 plot_fp1
 ```
-
-```{r}
+Gráfica no. 2 (Perfil para solo una observación con respuesta Fully Paid)
+```{r, echo=FALSE}
 plot_fp_2
 ```
-
-```{r}
+Gráfica no. 3 (Perfil para solo una observación con respuesta Fully Paid)
+```{r, echo=FALSE}
 plot_fp_3
 #510 y 260
 ```
-
-```{r}
+Gráfica no. 4 (Perfil para solo una observación con respuesta Fully Paid)
+```{r, echo=FALSE}
 plot_fp_4
 ```
+Gráfica no. 5 (Perfil para solo una observación con respuesta Fully Paid)
 
-Charged off
+### Explicaciones desde la libreria DALEX para una observación en con respuesta "Charged off":
 
 ```{r}
 single_observation = Train[11434, ]
@@ -104,6 +113,7 @@ modelo_1_1_explained %>% predict(single_observation)
 modelo_1_1_explained %>% predict(single_observation)
 modelo_1_1_explained %>% predict_parts(new_observation = single_observation) %>% plot(title="Break-Down for single obs with Charged Off response")
 ```
+Gráfica no. 6 (Break down para solo una observación con respuesta Fully Paid)
 
 ```{r}
 plot_cf1 = modelo_1_1_explained %>% predict_profile(new_observation = select(single_observation, -c('ID'))) %>% plot(title="Break-Down Charged Off response",  variables=c("Annual.Income"))
@@ -113,19 +123,21 @@ plot_cf_4= modelo_1_1_explained %>% predict_profile(new_observation = select(sin
 ```
 
 
-```{r}
+```{r, echo=FALSE}
 plot_cf1
 ```
-```{r}
+Gráfica no. 7 (Perfil para solo una observación con respuesta Charged off)
+
+```{r, echo=FALSE}
 plot_cf_2
 #510 y 260
 ```
-
-```{r}
+Gráfica no. 8 (Perfil para solo una observación con respuesta Charged off)
+```{r, echo=FALSE}
 plot_cf_3
 ```
-
-```{r}
+Gráfica no. 9 (Perfil para solo una observación con respuesta Charged off)
+```{r, echo=FALSE}
 plot_cf_4
 ```
-
+Gráfica no. 10 (Perfil para solo una observación con respuesta Charged off)
