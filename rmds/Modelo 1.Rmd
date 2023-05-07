@@ -33,27 +33,17 @@ library(ggside)
 
 ```{r, carga de datos, echo=FALSE}
 Train_1 = read.csv("../datasets/muestra_completa.csv")
-
-set.seed(123) # Establecer la semilla para obtener siempre la misma muestra aleatoria
-Train_intern_1 <- sample_frac(Train_1, 0.75)
-Test_intern_1 <- setdiff(Train_1, Train_intern_1)
-
-# nrow(Train_1)
-# nrow(Train_intern_1) + nrow(Test_intern_1) 
 ```
 
 ```{r, modif de datos, echo=FALSE}
-Train_intern_1 = dplyr::select(Train_intern_1, -c(ID))
-Test_intern_1 = dplyr::select(Test_intern_1, -c(ID))
-#Train_copy_1$Loan.Status = as.factor(Train_copy_1$Loan.Status) 
+Train_1 = dplyr::select(Train_1, -c(ID))
 ```
 
 ```{r, echo=FALSE}
-Train_intern_1$Term = as.factor(Train_intern_1$Term)
-Train_intern_1$Years.in.current.job = as.factor(Train_intern_1$Years.in.current.job)
-Train_intern_1$Home.Ownership = as.factor(Train_intern_1$Home.Ownership)
-Train_intern_1$Purpose = as.factor(Train_intern_1$Purpose)
-#str(Train_intern_1)
+Train_1$Term = as.factor(Train_1$Term)
+Train_1$Years.in.current.job = as.factor(Train_1$Years.in.current.job)
+Train_1$Home.Ownership = as.factor(Train_1$Home.Ownership)
+Train_1$Purpose = as.factor(Train_1$Purpose)
 ```
 
 ### Modelo de regresión logística.
@@ -68,7 +58,7 @@ El presente ejercicio se plantea ajustar un modelo que tenga el mejor performanc
 - Visualizaciones del modelo de regresion logistica simple
 
 ```{r, echo=FALSE, message=FALSE}
-plot_lrm_1 = ggplot(Train_intern_1, aes(x=Credit.Score, y=Loan.Status)) +
+plot_lrm_1 = ggplot(Train_1, aes(x=Credit.Score, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -76,7 +66,7 @@ plot_lrm_1 = ggplot(Train_intern_1, aes(x=Credit.Score, y=Loan.Status)) +
   ggtitle("Logit ~Credit.Score")+
   theme_bw()
 
-plot_lrm_2 = ggplot(Train_intern_1, aes(x=Current.Loan.Amount, y=Loan.Status)) +
+plot_lrm_2 = ggplot(Train_1, aes(x=Current.Loan.Amount, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -85,7 +75,7 @@ plot_lrm_2 = ggplot(Train_intern_1, aes(x=Current.Loan.Amount, y=Loan.Status)) +
   ggtitle("Logit ~Current.Loan.Amount")+
   theme_bw()
 
-plot_lrm_3 = ggplot(Train_intern_1, aes(x=Annual.Income, y=Loan.Status)) +
+plot_lrm_3 = ggplot(Train_1, aes(x=Annual.Income, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -94,7 +84,7 @@ plot_lrm_3 = ggplot(Train_intern_1, aes(x=Annual.Income, y=Loan.Status)) +
   ggtitle("Logit ~Annual.Income")+
   theme_bw()
 
-plot_lrm_4 = ggplot(Train_intern_1, aes(x=Monthly.Debt, y=Loan.Status)) +
+plot_lrm_4 = ggplot(Train_1, aes(x=Monthly.Debt, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -103,7 +93,7 @@ plot_lrm_4 = ggplot(Train_intern_1, aes(x=Monthly.Debt, y=Loan.Status)) +
   ggtitle("Logit ~Monthly.Debt")+
   theme_bw()
 
-plot_lrm_5 = ggplot(Train_intern_1, aes(x=Years.of.Credit.History, y=Loan.Status)) +
+plot_lrm_5 = ggplot(Train_1, aes(x=Years.of.Credit.History, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -111,7 +101,7 @@ plot_lrm_5 = ggplot(Train_intern_1, aes(x=Years.of.Credit.History, y=Loan.Status
   ggtitle("Logit ~Years.of.Credit.History")+
   theme_bw()
 
-plot_lrm_6 = ggplot(Train_intern_1, aes(x=Months.since.last.delinquent, y=Loan.Status)) +
+plot_lrm_6 = ggplot(Train_1, aes(x=Months.since.last.delinquent, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -126,7 +116,7 @@ grid.arrange(plot_lrm_1, plot_lrm_2, plot_lrm_3, plot_lrm_4, plot_lrm_5, plot_lr
 ```
 
 ```{r, echo=FALSE, message=FALSE}
-plot_lrm_7 = ggplot(Train_intern_1, aes(x=Number.of.Open.Accounts, y=Loan.Status)) +
+plot_lrm_7 = ggplot(Train_1, aes(x=Number.of.Open.Accounts, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -134,7 +124,7 @@ plot_lrm_7 = ggplot(Train_intern_1, aes(x=Number.of.Open.Accounts, y=Loan.Status
   ggtitle("Logit ~Number.of.Open.Accounts")+
   theme_bw()
 
-plot_lrm_8 = ggplot(Train_intern_1, aes(x=Current.Credit.Balance, y=Loan.Status)) +
+plot_lrm_8 = ggplot(Train_1, aes(x=Current.Credit.Balance, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -143,7 +133,7 @@ plot_lrm_8 = ggplot(Train_intern_1, aes(x=Current.Credit.Balance, y=Loan.Status)
   ggtitle("Logit ~Current.Credit.Balance")+
   theme_bw()
 
-plot_lrm_9 = ggplot(Train_intern_1, aes(x=Maximum.Open.Credit, y=Loan.Status)) +
+plot_lrm_9 = ggplot(Train_1, aes(x=Maximum.Open.Credit, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -152,7 +142,7 @@ plot_lrm_9 = ggplot(Train_intern_1, aes(x=Maximum.Open.Credit, y=Loan.Status)) +
   ggtitle("Logit ~Maximum.Open.Credit")+
   theme_bw()
 
-plot_lrm_10 = ggplot(Train_intern_1, aes(x=Bankruptcies, y=Loan.Status)) +
+plot_lrm_10 = ggplot(Train_1, aes(x=Bankruptcies, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -160,7 +150,7 @@ plot_lrm_10 = ggplot(Train_intern_1, aes(x=Bankruptcies, y=Loan.Status)) +
   ggtitle("Logit ~Bankruptcies")+
   theme_bw()
 
-plot_lrm_11 = ggplot(Train_intern_1, aes(x=Tax.Liens, y=Loan.Status)) +
+plot_lrm_11 = ggplot(Train_1, aes(x=Tax.Liens, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -182,7 +172,7 @@ rm(plot_lrm_1, plot_lrm_2, plot_lrm_3, plot_lrm_4, plot_lrm_5, plot_lrm_6, plot_
 
 ######  Ajuste del modelo no. 1
 ```{r}
-modelo_1 = glm(data = Train_intern_1, 
+modelo_1 = glm(data = Train_1, 
               formula = Loan.Status~., family = "binomial")
 summary(modelo_1)
 ```
@@ -190,12 +180,12 @@ Salida de consola y código no.1 (Ajuste del modelo no.1 )
 
 ######  Update del modelo con las variables estadísticamente significativas
 ```{r}
-modelo_1 = update(object = modelo_1, formula. = .~.-Home.Ownership -Number.of.Open.Accounts -Number.of.Credit.Problems -Current.Credit.Balance -Bankruptcies -Tax.Liens -Months.since.last.delinquent -Maximum.Open.Credit)
+modelo_1 = update(object = modelo_1, formula. = .~.-Home.Ownership -Number.of.Open.Accounts -Number.of.Credit.Problems -Current.Credit.Balance -Bankruptcies -Tax.Liens -Maximum.Open.Credit)
 summary(modelo_1)
 ```
 Salida de consola y código no.2 (Update al modelo no.1)
 
-El modelo 1 tiene un AIC de 19'828, la version que contempla todos los predictores era de 19797
+El modelo 1 tiene un AIC de 26'635, la version que contempla todos los predictores era de 26'577
 ######  Anova del modelo
 ```{r}
 anova(modelo_1)
@@ -206,7 +196,9 @@ Salida de consola y código no.3 (ANOVA Modelo no. 1)
 
 ```{r}
 glmulti.logistic.out <-
-    glmulti(Loan.Status ~.-Home.Ownership -Number.of.Open.Accounts -Number.of.Credit.Problems -Current.Credit.Balance -Bankruptcies -Tax.Liens -Months.since.last.delinquent -Maximum.Open.Credit, data = Train_intern_1,
+    glmulti(Loan.Status ~ Term + Years.in.current.job + Purpose + 
+    Current.Loan.Amount + Credit.Score + Annual.Income + Monthly.Debt + 
+    Years.of.Credit.History + Months.since.last.delinquent, data = Train_1,
             level = 1,               # No interaction considered
             method = "h",            # Exhaustive approach
             crit = "aic",            # AIC as criteria
@@ -217,6 +209,7 @@ glmulti.logistic.out <-
 
 ## Show 5 best models (Use @ instead of $ for an S4 object)
 glmulti.logistic.out@formulas
+
 ```
 Salida de consola y código no.4 (Selección de variables)-
 
@@ -233,23 +226,18 @@ Salida de consola y código no.4 (Selección de variables)-
 #                                 family = binomial)   
 ```
 
-De entrada, el mejor modelo por AIC que propone la funcion glmulti() es el mismo modelo de regresión logística que se le pasó por parametro, por lo que podemos hablar de que ese al momento es el modelo ideal, con 8 features. Sin embargo en segundo y tercer lugar proponé modelos con 7 features, por lo que se evaluará contra validación cruzada la viabilidad de irnos por un modelo más ligero. 
+De entrada, el mejor modelo por AIC que propone la funcion glmulti() es el mismo modelo de regresión logística que se le pasó por parametro, por lo que podemos hablar de que ese al momento es el modelo ideal, resaltando que tiene 9 features. Sin embargo en segundo y tercer lugar proponé modelos con 8 features, por lo que se evaluará contra validación cruzada la viabilidad de irnos por un modelo más ligero. 
 
-- Elaborando modelos alternativos a `modelo_1`
-
-```{r}
-Train_intern_1$Purpose <- factor(Train_intern_1$Purpose)
-levels(Train_intern_1$Purpose)
-```
-
+Elaborando modelos alternativos a `modelo_1`
 
 - Modelo 1.1
 ```{r}
-modelo_1_1 = glm(data = Train_intern_1, 
-              formula = Loan.Status~ Term + Purpose + Current.Loan.Amount + Credit.Score + Annual.Income + Monthly.Debt + Years.of.Credit.History, family = "binomial")
+modelo_1_1 = glm(data = Train_1, 
+              formula = Loan.Status~ Term + Years.in.current.job + Purpose + Current.Loan.Amount + 
+    Credit.Score + Annual.Income + Monthly.Debt + Years.of.Credit.History, family = "binomial")
 summary(modelo_1_1)
 ```
-El modelo 1.1 tiene un AIC de 19832
+El modelo 1.1 tiene un AIC de 26637
 
 Salida de consola y código no.5 (Ajustando modelo no. 1.1)-
 
@@ -261,12 +249,13 @@ Salida de consola y código no.6 (ANOVA modelo no. 1.1)-
 - Modelo 1.2
 
 ```{r}
-#Modelo 1.3
-modelo_1_2 = glm(data = Train_intern_1, 
-              formula = Loan.Status~ Term + Years.in.current.job + Purpose + Current.Loan.Amount + Credit.Score + Annual.Income + Monthly.Debt, family = "binomial")
+modelo_1_2 = glm(data = Train_1, 
+              formula = Loan.Status~ Term + Purpose + Current.Loan.Amount + Credit.Score + 
+    Annual.Income + Monthly.Debt + Years.of.Credit.History + 
+    Months.since.last.delinquent, family = "binomial")
 summary(modelo_1_2)
 ```
-El modelo 1.2 tiene un AIC de 19843
+El modelo 1.2 tiene un AIC de 26'647
 
 Salida de consola y código no.7 (Ajustando modelo no. 1.2)-
 
@@ -277,7 +266,7 @@ Del modelo base y los dos modelos que derivan de este, que además presentan la 
 
 - Validación por k-fold para el modelo base
 ```{r, warning=FALSE}
-MSE_kf_1 = cv.glm(data = Test_intern_1,
+MSE_kf_1 = cv.glm(data = Train_1,
                glmfit = modelo_1, 
                K = 50)
 MSE_kf_1$delta
@@ -290,7 +279,7 @@ El primer valor representa el error medio cuadrático promedio para los K pliegu
 
 - Validación por k-fold para el modelo 1.1
 ```{r, warning=FALSE}
-MSE_kf_1_1 = cv.glm(data = Test_intern_1,
+MSE_kf_1_1 = cv.glm(data = Train_1,
             glmfit = modelo_1_1, K = 50)
 MSE_kf_1_1$delta
 ```
@@ -298,13 +287,360 @@ Salida de consola y código no.9 (MSE por K-Pliegues del modelo no. 1.1)-
 
 - Validación por k-fold para el modelo 1.2
 ```{r, warning=FALSE}
-MSE_kf_1_2 = cv.glm(data = Test_intern_1,
+MSE_kf_1_2 = cv.glm(data = Train_1,
             glmfit = modelo_1_2, K = 50)
 MSE_kf_1_2$delta
 ```
 Salida de consola y código no. 10 (MSE por K-Pliegues del modelo no. 1.2)-
 
-Concluimos que los dos modelos que derivan del modelo base (donde la diferencia solo se da en que el primero incluye Years.of.Credit.History y el segundo Years.in.current.job) con solo 7 features presentan ligeramente un MSE menor, contra el conjunto de Test, que el modelo base además de incluir una variable menos, por lo que dichos modelos pasan a la etapa de remuestreo y el estudio de la matriz de confusión con la finalidad de proponer el de mejor performance en estas 2 instancias.
+El MSPR y MSPR por corrección son practicamente los mismos, por los que requerimos evaluarlos en validación cruzada para quedarnos con el de mejor ajuste.
+
+##### Modelo no 1
+
+- Respuesta del modelo en el conjunto de prueba
+
+```{r}
+prediccion_1_0 = predict(object = modelo_1,
+                    newdata = Train_1, type = "response")
+df_prediccion_1_0 <- data.frame(preds = prediccion_1_0)
+
+dist_1_0 = ggplot(df_prediccion_1_0, aes(y="preds", x=prediccion_1_0))+
+  geom_jitter(alpha=0.5, color="greenyellow")+
+  geom_violin(alpha=0.5)+
+  geom_boxplot(width = 0.3, fill = "white", alpha = 0.5)+
+  scale_x_continuous(labels=c("0%", "25%", "50%", "75%", "100%"), name = "Respuesta")+
+  scale_y_discrete(labels=c(""), name=NULL)+
+  ggtitle("Predicciones para el conjunto Test en el modelo 1.1")+
+  theme_bw()
+
+dist_1_0
+```
+Gráfica no. 2 (Distribución de la predicción para el modelo no 1)-
+
+- Punto de corte ideal para maximizar la sensibilidad
+
+```{r}
+prediccion_1_0 = predict(object = modelo_1,
+                    newdata = Train_1, type = "response")
+
+Sensibilidad_1_0 <- vector()
+Corte_1_0 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_1_0)) {
+  Prediccion <- as.factor(ifelse(prediccion_1_0 >= Corte_1_0[i], yes = 1, no = 0))
+  
+  Sensibilidad_1_0[i] <- tryCatch(
+    {
+      confusionMatrix(data = Prediccion, reference = as.factor(Train_1$Loan.Status), 
+                             )$byClass[1]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado
+    }
+  )
+}
+```
+
+```{r}
+df_sensibilidad = data.frame(corte= Corte_1_0, sensibilidad = Sensibilidad_1_0)
+sens1_0 = ggplot(df_sensibilidad, aes(x=Corte_1_0, y=Sensibilidad_1_0))+
+  geom_line()+
+  geom_point(aes(x = Corte_1_0[which.max(Sensibilidad_1_0)], y = Sensibilidad_1_0[which.max(Sensibilidad_1_0)]), 
+             shape = 21, size = 5, fill = "white", color = "blue") +
+  geom_text(aes(x = Corte_1_0[which.max(Sensibilidad_1_0)], y = Sensibilidad_1_0[which.max(Sensibilidad_1_0)] - 0.07, label = glue("Max \n{Corte_1_0[which.max(Sensibilidad_1_0)]}")),
+            hjust = 0.5) +
+  scale_y_continuous(breaks=c(0.25, 0.5, 0.75, 1), labels = c("25%", "50%", "75%", "100%"),
+                     name = "Sensibilidad")+
+  scale_x_continuous("Punto de corte")+
+  ggtitle("Punto de corte ideal para máximizar la sensibilidad (modelo 1)")+
+  theme_bw()
+sens1_0
+```
+Gráfica no. 3 (punto de corte ideal para maximizar la sensibilidad)-
+
+- punto de corte ideal para maximizar la especificidad
+
+```{r}
+prediccion_1_0 = predict(object = modelo_1,
+                    newdata = Train_1, type = "response")
+
+Especificidad_1_0 <- vector()
+Corte_1_0 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_1_0)) {
+  Prediccion <- as.factor(ifelse(prediccion_1_0 >= Corte_1_0[i], yes = 1, no = 0))
+  
+  Especificidad_1_0[i] <- tryCatch(
+    {
+      confusionMatrix(data = Prediccion, reference = as.factor(Train_1$Loan.Status))$byClass[2]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado
+    }
+  )
+}
+```
+
+```{r}
+df_especificidad = data.frame(corte= Corte_1_0, especificidad = Especificidad_1_0)
+espe1_0 = ggplot(df_especificidad, aes(x=Corte_1_0, y=Especificidad_1_0))+
+  geom_line()+
+  geom_point(aes(x = Corte_1_0[which.max(Especificidad_1_0)], y = Especificidad_1_0[which.max(Especificidad_1_0)]), 
+             shape = 21, size = 5, fill = "white", color = "blue") +
+  geom_text(aes(x = Corte_1_0[which.max(Especificidad_1_0)], y = Especificidad_1_0[which.max(Especificidad_1_0)] - 0.03, label = glue("Max \n{Corte_1_0[which.max(Especificidad_1_0)]}")),
+            hjust = 0.5) +
+  scale_y_continuous(breaks=c(0.85, 0.90, 0.95, 1), labels = c("85%", "90%", "95%", "100%"),
+                     name = "Especificidad")+
+  scale_x_continuous("Punto de corte")+
+  ggtitle("Punto de corte ideal para máximizar la especificidad (modelo 1.1)")+
+  theme_bw()
+espe1_0
+```
+
+Gráfica no. 4 (punto de corte ideal para maximizar la especificidad)-
+
+
+- punto de corte ideal para maximizar la exactitud
+
+```{r}
+
+prediccion_1_0 = predict(object = modelo_1,
+                    newdata = Train_1, type = "response")
+
+Exactitud_1_0 <- vector()
+Corte_1_0 <- seq(0.05, 0.95, by = 0.001)
+
+for (i in 1:length(Corte_1_0)) {
+  Prediccion <- as.factor(ifelse(prediccion_1_0 >= Corte_1_0[i], yes = 1, no = 0))
+  
+  Exactitud_1_0[i] <- tryCatch(
+    {
+      confusionMatrix(data = Prediccion, reference = as.factor(Train_1$Loan.Status))$overall[1]
+    },
+    error = function(e) {
+      0 # O cualquier valor predeterminado
+    }
+  )
+}
+```
+
+```{r}
+df_exactitud = data.frame(corte= Corte_1_0, exactitud = Exactitud_1_0)
+exac1_0 = ggplot(df_especificidad, aes(x=Corte_1_0, y=Exactitud_1_0))+
+  geom_line()+
+  geom_point(aes(x = Corte_1_0[which.max(Exactitud_1_0)], y = Exactitud_1_0[which.max(Exactitud_1_0)]), 
+             shape = 21, size = 5, fill = "white", color = "blue") +
+  geom_text(aes(x = Corte_1_0[which.max(Exactitud_1_0)], y = Exactitud_1_0[which.max(Exactitud_1_0)] - 0.06, label = glue("Max \n{Corte_1_0[which.max(Exactitud_1_0)]}")),
+            hjust = 0.5) +
+  scale_y_continuous(breaks=c(0.2, 0.4, 0.5, 0.6, 0.7, 0.8), labels = c("20%", "40%", "50%", "60%", "70%", "80%"),
+                     name = "Exactitud")+
+  scale_x_continuous("Punto de corte")+
+  ggtitle("Punto de corte ideal para máximizar la exactitud (modelo 1)")+
+  theme_bw()
+exac1_0
+```
+Gráfica no. 5 (punto de corte ideal para maximizar la exactitud
+
+```{r}
+corte_optimo_1_0 = which(Exactitud_1_0==max(Exactitud_1_0))
+Corte_1_0[corte_optimo_1_0][1]
+
+Corte_modelo_1 = Corte_1_0[corte_optimo_1_0][1]
+```
+Salida de consola y código no. 11 (Corte óptimo para máximizar la exactitud en modelo 1)-
+
+###### Matriz de confusión para el modelo 1
+
+
+```{r}
+Prediccion_1_0<-as.factor(ifelse(prediccion_1_0>=Corte_1_0[corte_optimo_1_0][1],yes = 1, no = 0))
+
+confusionMatrix(data = Prediccion_1_0, reference = as.factor(Train_1$Loan.Status))
+
+cfmx1_0 = confusionMatrix(data = Prediccion_1_0, reference = as.factor(Train_1$Loan.Status))
+```
+Salida de consola y código no. 12 (Matriz de confusión para el modelo no 1)-
+
+```{r}
+mosaic(cfmx1_0$table, shade = T, colorize = T,
+       gp = gpar(fill = matrix(c("green3", "red2", "red2", "green3"), 2, 2)),
+       main = "Matriz de confusión (modelo 1)")
+```
+Salida de consola y código no. 13 (Matriz de confusión ilustrada para el modelo no 1)-
+
+###### Curva ROC
+
+```{r}
+##### Comparar modelo ya ajustado (no.1) con uno nuevo y muy simple
+Prediccion_1_0_roc<-predict(object = modelo_1,
+                    newdata = Train_1, type = "response", 
+                    se.fit = T)
+
+predicciones_roc_1_0=prediction(Prediccion_1_0_roc$fit,Train_1$Loan.Status)
+Desempeno_roc_1_0<-performance(predicciones_roc_1_0,'tpr','fpr')
+
+## Cgenerando nuevo modelo simple
+modelo_simple_prueba <- glm(data = Train_1, 
+              formula = Loan.Status~Purpose+Bankruptcies, family = "binomial")
+
+Prediccion_1_prueba<-predict(object = modelo_simple_prueba,
+                    newdata = Train_1, type = "response", 
+                    se.fit = T)
+
+predicciones1_prueba<-prediction(Prediccion_1_prueba$fit,Train_1$Loan.Status)
+Desempeno1_prueba<-performance(predicciones1_prueba,'tpr','fpr')
+
+#ejecutar en conjunto
+plot(Desempeno_roc_1_0,col="darkgreen")
+plot(Desempeno1_prueba, col = "firebrick", add = T)
+legend(x=.7, y=.4, legend = c("Simple","Completo"),
+      lwd = 2, col = c("red","darkgreen"),
+      title = "Modelos")
+title("Curva ROC del modelo 1")
+```
+Gráfica no. 6 (Curva ROC modelo 1.1)-
+
+######  Identificando los coeficientes modelo no.1
+
+```{r, echo=FALSE}
+nombres_vars = names(coef(modelo_1))
+resumen = summary(modelo_1)
+
+# Iterar por cada variable e imprimir su nombre y coeficiente
+for (i in seq_along(nombres_vars)) {
+  cat(paste(nombres_vars[i], ": ", resumen$coefficients[i, "Estimate"], "\n"))
+}
+```
+Salida de consola y código no. 14 (Coeficientes modelo no 1)-
+
+###### Intervalos de confianza modelo no. 1
+
+```{r, echo=FALSE}
+confint(object = modelo_1, level = 0.95)
+```
+
+Salida de consola y código no. 15 (Intervalos de confianza para el modelo no 1)-
+
+######  ODDS Ratios del modelo no 1
+- Identificando los odds ratios 
+$e^{B_{k}}$
+
+```{r, echo=FALSE}
+nombres_vars = names(coef(modelo_1))
+resumen = summary(modelo_1)
+
+# Iterar por cada variable e imprimir su nombre y el num de euler elevado al coeficiente
+for (i in seq_along(nombres_vars)) {
+  cat(paste(nombres_vars[i], ": ", exp(resumen$coefficients[i, "Estimate"]), "\n"))
+}
+```
+######  Interpretación Odds ratios en el modelo 1
+
+- Si la variable `Term` adopta el valor `Short`, este evento estara asociado con un aumento del 72.47% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Term` adopa el valor de `Long`.
+- Si la variable `Purpose` adopta el `buy a car`, este evento estara asociado con un aumento del 231% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el `buy a house`, este evento estara asociado con un aumento del 30% en las probabilidades del pago al corriente (`Fully Paid`)
+comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `debt consolidation`, este evento estara asociado con un aumento del 59% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `educational expenses`, este evento estara asociado con un aumento del 58.8% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `house improvement`, este evento estara asociado con un aumento del 84.4% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `major_purchase`, este evento estara asociado con un decremento del 3% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `medical bills`, este evento estara asociado con un aumento del 53.5% en las probabilidades del pago al corriente (`Fully Paid`)
+- Si la variable `Purpose` adopta el valor `moving`, este evento estara asociado con un decremento del 8.1% en las probabilidades del pago al corriente (`Fully Paid`)
+- Si la variable `Purpose` adopta el valor `other`, este evento estara asociado con un aumento del 60% en las probabilidades del pago al corriente (`Fully Paid`)
+comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `renewable_energy`, este evento estara asociado con un aumento muy exagerado en las probabilidades del pago al corriente (`Fully Paid`)
+comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `small_business`, este evento estara asociado con una disminución del 62% en las probabilidades del pago al corriente (`Fully Paid`)
+comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `take a trip`, este evento estara asociado con un aumento del 125% en las probabilidades del pago al corriente (`Fully Paid`)
+comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `vacation`, este evento estara asociado con un aumento del 20% en las probabilidades del pago al corriente (`Fully Paid`)
+comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `wedding`, este evento estara asociado con una disminución del 3% en las probabilidades del pago al corriente (`Fully Paid`).
+comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Current.Loan.Amount` aumenta en 10,000,000 unidades, este evento estara asociado con un aumento del 76.5% en las probabilidades del pago al corriente (`Fully Paid`).
+- Si la variable `Credit.Score` aumenta en una 100 unidades, este evento estara asociado con una disminución del 13.74% en las probabilidades del pago al corriente (`Fully Paid`).
+- Si la variable `Annual.Income` aumenta en 1,000,000 unidades, este evento estara asociado con un aumento del 34.4% en las probabilidades del pago al corriente (`Fully Paid`).
+- Si la variable `Monthly.Debt` aumenta en 10,00 unidades, este evento estara asociado con una disminución del 13.4% en las probabilidades del pago al corriente (`Fully Paid`).
+- Si la variable `Years.of.Credit.History` aumenta en una unidad, este evento estara asociado con un aumento del 0.93% en las probabilidades del pago al corriente (`Fully Paid`).
+
+###### Evaluación supuestos
+
+- VIF (Ausencia de multicolinealidad)
+
+```{r, echo=FALSE}
+#vif(modelo_1_2)
+vif_modelo <- vif(modelo_1)
+datos_vif <- data.frame(VIF = vif_modelo)
+ggplot(datos_vif, aes(x = row.names(datos_vif), y = VIF.GVIF)) +
+  geom_bar(stat = "identity", fill = "blue", width = 0.5) +
+  coord_flip() +
+  ggtitle("Valores de VIF para cada variable del modelo  1") +
+  xlab("Variables del modelo") +
+  ylab("Valor de VIF")+
+  theme_bw()
+```
+
+Gráfica no. 7 (VIF modelo 1)-
+
+######  Supuestos del modelo 1
+
+- La variable de interés es de respuesta binaria.
+Este supuesto se corrobora al inicio de este rmarkdown.
+- Las variables independientes estan relacionadas linealmente con la variable dependiente.
+Este supuesto se corroboró en el EDA.
+
+###### Bootstraping del modelo 1.1
+
+
+Empleamos como estadístico a evalua el % de aciertos (suma de verdaderos positivos y verdaderos negativos sobre el numero de observaciones en Train para este caso)
+
+
+```{r}
+modelo.fun <- function(datos, subconjunto){
+  #Generamos un vector de Predicción para la probabilidad de fully charged (1) para un nuevo vector random [llamado predicciones]
+  predicciones<-predict(modelo_1, newdata = datos[subconjunto,])
+  #Con dicho vector [predicciones], separar por clases para fully paid (1) y charged off(0) para generar el nuevo vector [Prediccion]
+  Predicciones <- as.factor(ifelse(predicciones >= Corte_1_0[corte_optimo_1_0][1],
+                                yes = 1, no = 0))
+  # Instanciamos la matriz de confusion para la variable de respuesta       (loan.status) con el vector de probabilidades llamado predicciones
+  cfmtx = confusionMatrix(data = Predicciones, reference = as.factor(datos$Loan.Status))
+  
+  # Generamos un promedio de el porcentaje de aciertos general
+  class_prop = (cfmtx$table[1] + cfmtx$table[4]) / length(Train_1$Loan.Status)
+  
+  
+  # Regresamos dicho promedio
+  return(class_prop)
+}
+
+
+Bootstrap<-boot(data = Train_1, 
+                statistic = modelo.fun,## <- el parámetro 
+                #### statistic requiere una función que reciba dos 
+                #### parámetros: la muestra y los índices
+                R = 1000) #10mil muestras simuladas
+
+Bootstrap
+```
+
+Salida de consola y código no. 17 (Bootstraping en el modelo no 1)-
+
+
+```{r}
+mean = mean(Bootstrap$t[,1])
+bootstrap_vector_modelo_1_0 = Bootstrap$t[,1]
+
+hist(Bootstrap$t[,1], breaks = 100,
+     xlab = "% de aciertos",
+     main = "Bootstrap de la predicción para el modelo 1.1",
+     ylab = "Frecuencia")
+abline(v = quantile(x = Bootstrap$t[,1], c(.025,.975)),col = "red")
+abline(v = mean(Bootstrap$t[,1]), col = "darkgreen", lwd = 2)
+text(x=.758, y=300, labels = glue("Promedio \n{round(mean, 4)}"))
+```
+
+Gráfica no. 8 (Bootstraping en el modelo 1)-
 
 
 ##### Modelo no 1.1
@@ -313,7 +649,7 @@ Concluimos que los dos modelos que derivan del modelo base (donde la diferencia 
 
 ```{r}
 prediccion_1 = predict(object = modelo_1_1,
-                    newdata = Test_intern_1, type = "response")
+                    newdata = Train_1, type = "response")
 df_prediccion_1 <- data.frame(preds = prediccion_1)
 
 dist_1 = ggplot(df_prediccion_1, aes(y="preds", x=prediccion_1))+
@@ -328,13 +664,13 @@ dist_1 = ggplot(df_prediccion_1, aes(y="preds", x=prediccion_1))+
 dist_1
 ```
 
-Gráfica no. 2 (Distribución de la predicción para el modelo no 1.1)-
+Gráfica no. 9 (Distribución de la predicción para el modelo no 1.1)-
 
-- Punto de corte ideal para maximizar la sensibilidad (vs Test)
+- Punto de corte ideal para maximizar la sensibilidad
 
 ```{r}
 prediccion_1 = predict(object = modelo_1_1,
-                    newdata = Test_intern_1, type = "response")
+                    newdata = Train_1, type = "response")
 
 Sensibilidad_1 <- vector()
 Corte_1 <- seq(0.05, 0.95, by = 0.001)
@@ -344,17 +680,14 @@ for (i in 1:length(Corte_1)) {
   
   Sensibilidad_1[i] <- tryCatch(
     {
-      # confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), Prediccion)$overall[1]
-      confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), 
-                             Prediccion)$byClass[1]
+      confusionMatrix(data = Prediccion, reference = as.factor(Train_1$Loan.Status), 
+                             )$byClass[1]
     },
     error = function(e) {
       0 # O cualquier valor predeterminado
     }
   )
 }
-
-# plot(x=Corte_1, y = Sensibilidad_1, type = "l", main ="Punto de corte óptimo para maximizar la sensibilidad (vs Test)", xlab="Corte", ylab="Exactitud")
 ```
 
 
@@ -373,13 +706,13 @@ sens1 = ggplot(df_sensibilidad, aes(x=Corte_1, y=Sensibilidad_1))+
   theme_bw()
 sens1
 ```
-Gráfica no. 3 (punto de corte ideal para maximizar la sensibilidad (vs Test))-
+Gráfica no. 10 (punto de corte ideal para maximizar la sensibilidad)-
 
-- punto de corte ideal para maximizar la especificidad (vs Test)
+- punto de corte ideal para maximizar la especificidad
 
 ```{r}
 prediccion_1 = predict(object = modelo_1_1,
-                    newdata = Test_intern_1, type = "response")
+                    newdata = Train_1, type = "response")
 
 Especificidad_1 <- vector()
 Corte_1 <- seq(0.05, 0.95, by = 0.001)
@@ -389,17 +722,13 @@ for (i in 1:length(Corte_1)) {
   
   Especificidad_1[i] <- tryCatch(
     {
-      # confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), Prediccion)$overall[1]
-      confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), 
-                             Prediccion)$byClass[2]
+      confusionMatrix(data = Prediccion, reference = as.factor(Train_1$Loan.Status))$byClass[2]
     },
     error = function(e) {
       0 # O cualquier valor predeterminado
     }
   )
 }
-
-# plot(x=Corte_1, y = Especificidad_1, type = "l", main ="Punto de corte óptimo para maximizar la especificidad (vs Test)", xlab="Corte", ylab="Exactitud")
 ```
 
 ```{r}
@@ -418,15 +747,15 @@ espe1 = ggplot(df_especificidad, aes(x=Corte_1, y=Especificidad_1))+
 espe1
 ```
 
-Gráfica no. 4 (punto de corte ideal para maximizar la especificidad (vs Test))-
+Gráfica no. 11 (punto de corte ideal para maximizar la especificidad)-
 
 
-- punto de corte ideal para maximizar la exactitud (vs Test)
+- punto de corte ideal para maximizar la exactitud
 
 ```{r}
 
 prediccion_1 = predict(object = modelo_1_1,
-                    newdata = Test_intern_1, type = "response")
+                    newdata = Train_1, type = "response")
 
 Exactitud_1 <- vector()
 Corte_1 <- seq(0.05, 0.95, by = 0.001)
@@ -436,15 +765,13 @@ for (i in 1:length(Corte_1)) {
   
   Exactitud_1[i] <- tryCatch(
     {
-      confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), Prediccion)$overall[1]
+      confusionMatrix(data = Prediccion, reference = as.factor(Train_1$Loan.Status))$overall[1]
     },
     error = function(e) {
       0 # O cualquier valor predeterminado
     }
   )
 }
-
-# plot(x=Corte_1, y = Exactitud_1, type = "l", main ="Punto de corte óptimo para maximizar la exactitud (vs Test)", xlab="Corte", ylab="Exactitud")
 ```
 
 ```{r}
@@ -463,7 +790,8 @@ exac1 = ggplot(df_especificidad, aes(x=Corte_1, y=Exactitud_1))+
 exac1
 ```
 
-Gráfica no. 5 (punto de corte ideal para maximizar la exactitud (vs Test))-
+Gráfica no. 12 (punto de corte ideal para maximizar la exactitud en modelo 1.1)
+
 
 ```{r}
 corte_optimo_1 = which(Exactitud_1==max(Exactitud_1))
@@ -471,7 +799,7 @@ Corte_1[corte_optimo_1][1]
 
 Corte_modelo_1_1 = Corte_1[corte_optimo_1][1]
 ```
-Salida de consola y código no. 11 (Corte óptimo para máximizar la exactitud)-
+Salida de consola y código no. 18 (Corte óptimo para máximizar la exactitud)-
 
 
 ###### Matriz de confusión para el modelo 1.1
@@ -480,13 +808,14 @@ Salida de consola y código no. 11 (Corte óptimo para máximizar la exactitud)-
 ```{r}
 Prediccion_1<-as.factor(ifelse(prediccion_1>=Corte_1[corte_optimo_1][1],yes = 1, no = 0))
 
-confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), 
-                             Prediccion_1)
+confusionMatrix(data = Prediccion_1, reference = as.factor(Train_1$Loan.Status))
 
-cfmx1 = confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), 
-                             Prediccion_1)
+cfmx1 = confusionMatrix(data = Prediccion_1, reference = as.factor(Train_1$Loan.Status))
 ```
-Salida de consola y código no. 12 (Matriz de confusión para el modelo no 1.1)-
+
+
+
+Salida de consola y código no. 19 (Matriz de confusión para el modelo no 1.1)-
 
 ```{r}
 mosaic(cfmx1$table, shade = T, colorize = T,
@@ -500,22 +829,11 @@ Salida de consola y código no. 13 (Matriz de confusión ilustrada para el model
 ```{r}
 ##### Comparar modelo ya ajustado (no.1) con uno nuevo y muy simple
 Prediccion_1_roc<-predict(object = modelo_1_1,
-                    newdata = Test_intern_1, type = "response", 
+                    newdata = Train_1, type = "response", 
                     se.fit = T)
 
-predicciones_roc_1=prediction(Prediccion_1_roc$fit,Test_intern_1$Loan.Status)
+predicciones_roc_1=prediction(Prediccion_1_roc$fit,Train_1$Loan.Status)
 Desempeno_roc_1<-performance(predicciones_roc_1,'tpr','fpr')
-
-## Cgenerando nuevo modelo simple
-modelo_simple_prueba <- glm(data = Train_intern_1, 
-              formula = Loan.Status~Purpose+Bankruptcies, family = "binomial")
-
-Prediccion_1_prueba<-predict(object = modelo_simple_prueba,
-                    newdata = Test_intern_1, type = "response", 
-                    se.fit = T)
-
-predicciones1_prueba<-prediction(Prediccion_1_prueba$fit,Test_intern_1$Loan.Status)
-Desempeno1_prueba<-performance(predicciones1_prueba,'tpr','fpr')
 
 #ejecutar en conjunto
 plot(Desempeno_roc_1,col="darkgreen")
@@ -525,7 +843,7 @@ legend(x=.7, y=.4, legend = c("Simple","Completo"),
       title = "Modelos")
 title("Curva ROC del modelo 1.1")
 ```
-Gráfica no. 6 (Curva ROC modelo 1.1)-
+Gráfica no. 14 (Curva ROC modelo 1.1)-
 
 ######  Identificando los coeficientes modelo no.1
 
@@ -538,14 +856,14 @@ for (i in seq_along(nombres_vars)) {
   cat(paste(nombres_vars[i], ": ", resumen$coefficients[i, "Estimate"], "\n"))
 }
 ```
-Salida de consola y código no. 14 (Coeficientes modelo no 1.2)-
+Salida de consola y código no. 20 (Coeficientes modelo no 1.2)-
 
 ###### Intervalos de confianza modelo no. 1.1
 
 ```{r, echo=FALSE}
 confint(object = modelo_1_1, level = 0.95)
 ```
-Salida de consola y código no. 15 (Intervalos de confianza para el modelo no 1.2)-
+Salida de consola y código no. 51 (Intervalos de confianza para el modelo no 1.2)-
 
 ######  ODDS Ratios del modelo no 1.1
 - Identificando los odds ratios 
@@ -560,35 +878,50 @@ for (i in seq_along(nombres_vars)) {
   cat(paste(nombres_vars[i], ": ", exp(resumen$coefficients[i, "Estimate"]), "\n"))
 }
 ```
-Salida de consola y código no. 16 (Odds ratios para el modelo no 1.1)-
+Salida de consola y código no. 22 (Odds ratios para el modelo no 1.1)-
 
 ######  Interpretación Odds ratios en el modelo 1.1
 
-- Si la variable `Term` adopta el valor `Short`, este evento estara asociado con un aumento del 68% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Term` adopa el valor de `Long`.
-- Si la variable `Purpose` adopta el `buy a car`, este evento estara asociado con un aumento del 266% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el `buy a house`, este evento estara asociado con un aumento del 44% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `debt consolidation`, este evento estara asociado con un aumento del 73% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `educational expenses`, este evento estara asociado con un aumento del 29% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `house improvement`, este evento estara asociado con un aumento del 115% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `major_purchase`, este evento estara asociado con un aumento del 16% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `medical bills`, este evento estara asociado con un aumento del 69% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `moving`, este evento estara asociado con un aumento del 22% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `other`, este evento estara asociado con un aumento del 81% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `renewable_energy`, este evento estara asociado con un aumento muy exagerado en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `small_business`, este evento estara asociado con una disminución del 57% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `take a trip`, este evento estara asociado con un aumento del 200% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `vacation`, este evento estara asociado con un aumento del 200% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `wedding`, este evento estara asociado con una disminución del 3% en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Current.Loan.Amount` aumenta en 10,000,000 unidades, este evento estara asociado con un aumento del 0.77% en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Credit.Score` aumenta en una 100 unidades, este evento estara asociado con una disminución del 13.9% en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Annual.Income` aumenta en 1,000,000 unidades, este evento estara asociado con un aumento del 32% en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Monthly.Debt` aumenta en 10,00 unidades, este evento estara asociado con una disminución del 11.9% en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Years.of.Credit.History` aumenta en una unidad, este evento estara asociado con un aumento del 1% en las probabilidades del pago al corriente (`Fully Paid`).
+- Si la variable `Term` adopta el valor `Short`, este evento estara asociado con un aumento del 72.6% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Term` adopa el valor de `Long`.
 
-De lo que podemos concluir que las variables con mayor incidencia son:
-- la variable nominal `Purpose` con el valor `buy a car`.
-- la variable nominal `Purpose` con el valor `take a trip`.
-- la variable nominal `Purpose` con el valor `home improvements`.
+- Si la variable `Years.in.current.job` adopta el `1 year`, este evento estara asociado con un aumento del 22.4% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Years.in.current.job` adopta el valor de `< 1 year`
+- Si la variable `Years.in.current.job` adopta el `10+ years`, este evento estara asociado con un aumento del 19.4% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Years.in.current.job` adopta el valor de `< 1 year`
+- Si la variable `Years.in.current.job` adopta el `2 years`, este evento estara asociado con un aumento del 1.6% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Years.in.current.job` adopta el valor de `< 1 year`
+- Si la variable `Years.in.current.job` adopta el `3 years`, este evento estara asociado con un aumento del 26.7% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Years.in.current.job` adopta el valor de `< 1 year`
+- Si la variable `Years.in.current.job` adopta el `4 years`, este evento estara asociado con un aumento del 23.7% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Years.in.current.job` adopta el valor de `< 1 year`
+- Si la variable `Years.in.current.job` adopta el `5 years`, este evento estara asociado con un aumento del 25.1% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Years.in.current.job` adopta el valor de `< 1 year`
+- Si la variable `Years.in.current.job` adopta el `6 year`, este evento estara asociado con un aumento del 4% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Years.in.current.job` adopta el valor de `< 1 year`
+- Si la variable `Years.in.current.job` adopta el `7 year`, este evento estara asociado con un aumento del 7% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Years.in.current.job` adopta el valor de `< 1 year`
+- Si la variable `Years.in.current.job` adopta el `8 year`, este evento estara asociado con un aumento del 11% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Years.in.current.job` adopta el valor de `< 1 year`
+- Si la variable `Years.in.current.job` adopta el `9 year`, este evento estara asociado con un aumento del 26.5% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Years.in.current.job` adopta el valor de `< 1 year`
+- Si la variable `Years.in.current.job` adopta el `n/a`, este evento estara asociado con un decre,emtp del 5.9% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Years.in.current.job` adopta el valor de `< 1 year`
+- Si la variable `Purpose` adopta el `buy a car`, este evento estara asociado con un aumento del 231% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el `buy a house`, este evento estara asociado con un aumento del 30% en las probabilidades del pago al corriente (`Fully Paid`)
+comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `debt consolidation`, este evento estara asociado con un aumento del 59% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `educational expenses`, este evento estara asociado con un aumento del 58.8% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `house improvement`, este evento estara asociado con un aumento del 84.4% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `major_purchase`, este evento estara asociado con un decremento del 2.5% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `medical bills`, este evento estara asociado con un aumento del 52.7% en las probabilidades del pago al corriente (`Fully Paid`)
+- Si la variable `Purpose` adopta el valor `moving`, este evento estara asociado con un decremento del 8% en las probabilidades del pago al corriente (`Fully Paid`)
+- Si la variable `Purpose` adopta el valor `other`, este evento estara asociado con un aumento del 60% en las probabilidades del pago al corriente (`Fully Paid`)
+comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `renewable_energy`, este evento estara asociado con un aumento muy exagerado en las probabilidades del pago al corriente (`Fully Paid`)
+comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `small_business`, este evento estara asociado con una disminución del 62% en las probabilidades del pago al corriente (`Fully Paid`)
+comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `take a trip`, este evento estara asociado con un aumento del 125% en las probabilidades del pago al corriente (`Fully Paid`)
+comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `vacation`, este evento estara asociado con un aumento del 21% en las probabilidades del pago al corriente (`Fully Paid`)
+comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Purpose` adopta el valor `wedding`, este evento estara asociado con una disminución del 2% en las probabilidades del pago al corriente (`Fully Paid`).
+comparado con el evento cuando `Purpose` adopta el valor de `Business Loan`
+- Si la variable `Current.Loan.Amount` aumenta en 10,000,000 unidades, este evento estara asociado con un aumento del 76.5% en las probabilidades del pago al corriente (`Fully Paid`).
+- Si la variable `Credit.Score` aumenta en una 100 unidades, este evento estara asociado con una disminución del 13.74% en las probabilidades del pago al corriente (`Fully Paid`).
+- Si la variable `Annual.Income` aumenta en 1,000,000 unidades, este evento estara asociado con un aumento del 34.4% en las probabilidades del pago al corriente (`Fully Paid`).
+- Si la variable `Monthly.Debt` aumenta en 10,00 unidades, este evento estara asociado con una disminución del 13.4% en las probabilidades del pago al corriente (`Fully Paid`).
+- Si la variable `Years.of.Credit.History` aumenta en una unidad, este evento estara asociado con un aumento del 0.93% en las probabilidades del pago al corriente (`Fully Paid`).
+
 
 ###### Evaluación supuestos
 
@@ -607,7 +940,7 @@ ggplot(datos_vif, aes(x = row.names(datos_vif), y = VIF.GVIF)) +
   theme_bw()
 ```
 
-Gráfica no. 7 (VIF modelo 1.1)-
+Gráfica no. 15 (VIF modelo 1.1)-
 
 ######  Supuestos del modelo 1.1 
 
@@ -631,11 +964,10 @@ modelo.fun <- function(datos, subconjunto){
   Predicciones <- as.factor(ifelse(predicciones >= Corte_1[corte_optimo_1][1],
                                 yes = 1, no = 0))
   # Instanciamos la matriz de confusion para la variable de respuesta       (loan.status) con el vector de probabilidades llamado predicciones
-  cfmtx = confusionMatrix(data = as.factor(datos$Loan.Status), 
-                             Predicciones)
+  cfmtx = confusionMatrix(data = Predicciones, reference = as.factor(datos$Loan.Status))
   
   # Generamos un promedio de el porcentaje de aciertos general
-  class_prop = (cfmtx$table[1] + cfmtx$table[4]) / length(Train_intern_1$Loan.Status)
+  class_prop = (cfmtx$table[1] + cfmtx$table[4]) / length(Train_1$Loan.Status)
   
   
   # Regresamos dicho promedio
@@ -643,16 +975,16 @@ modelo.fun <- function(datos, subconjunto){
 }
 
 
-Bootstrap<-boot(data = Train_intern_1, 
+Bootstrap<-boot(data = Train_1, 
                 statistic = modelo.fun,## <- el parámetro 
                 #### statistic requiere una función que reciba dos 
                 #### parámetros: la muestra y los índices
-                R = 10000) #10mil muestras simuladas
+                R = 1000) #10mil muestras simuladas
 
 Bootstrap
 ```
 
-Salida de consola y código no. 17 (Bootstraping en el modelo no 1.2)-
+Salida de consola y código no. 23 (Bootstraping en el modelo no 1.1)-
 
 
 ```{r}
@@ -668,7 +1000,7 @@ abline(v = mean(Bootstrap$t[,1]), col = "darkgreen", lwd = 2)
 text(x=.758, y=300, labels = glue("Promedio \n{round(mean, 4)}"))
 ```
 
-Gráfica no. 8 (Bootstraping en el modelo 1.1)-
+Gráfica no. 16 (Bootstraping en el modelo 1.1)-
 
 ##### Modelo no 1.2
 
@@ -676,7 +1008,7 @@ Gráfica no. 8 (Bootstraping en el modelo 1.1)-
 
 ```{r}
 prediccion_2 = predict(object = modelo_1_2,
-                    newdata = Test_intern_1, type = "response")
+                    newdata = Train_1, type = "response")
 df_prediccion_2 <- data.frame(preds = prediccion_2)
 
 dist2 = ggplot(df_prediccion_2, aes(y="preds", x=prediccion_2))+
@@ -691,13 +1023,13 @@ dist2
 ```
 
 
-Gráfica no. 9 (Distribución de la predicción para el modelo no 1.3)-
+Gráfica no. 16 (Distribución de la predicción para el modelo no 1.3)-
 
 - punto de corte ideal para maximizar la sensibilidad (vs Test)
 
 ```{r}
 prediccion_2 = predict(object = modelo_1_2,
-                    newdata = Test_intern_1, type = "response")
+                    newdata = Train_1, type = "response")
 
 Sensibilidad_2 <- vector()
 Corte_1 <- seq(0.05, 0.95, by = 0.001)
@@ -707,9 +1039,7 @@ for (i in 1:length(Corte_1)) {
   
   Sensibilidad_2[i] <- tryCatch(
     {
-      # confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), Prediccion)$overall[1]
-      confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), 
-                             Prediccion)$byClass[1]
+      confusionMatrix(data = Prediccion, reference = as.factor(Train_1$Loan.Status))$byClass[1]
     },
     error = function(e) {
       0 # O cualquier valor predeterminado
@@ -738,13 +1068,13 @@ sens2
 
 
 
-Gráfica no. 10 (punto de corte ideal para maximizar la sensibilidad (vs Test) en modelo no 1.2)-
+Gráfica no. 17 (punto de corte ideal para maximizar la sensibilidad (vs Test) en modelo no 1.2)-
 
 - punto de corte ideal para maximizar la sensibilidad (vs Test)
 
 ```{r}
 prediccion_2 = predict(object = modelo_1_2,
-                    newdata = Test_intern_1, type = "response")
+                    newdata = Train_1, type = "response")
 
 Especificidad_2 <- vector()
 Corte_1 <- seq(0.05, 0.95, by = 0.001)
@@ -754,9 +1084,8 @@ for (i in 1:length(Corte_1)) {
   
   Especificidad_2[i] <- tryCatch(
     {
-      # confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), Prediccion)$overall[1]
-      confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), 
-                             Prediccion)$byClass[2]
+      # confusionMatrix(reference = as.factor(Test_intern_1$Loan.Status), Prediccion)$overall[1]
+      confusionMatrix(data = Prediccion, reference = as.factor(Train_1$Loan.Status))$byClass[2]
     },
     error = function(e) {
       0 # O cualquier valor predeterminado
@@ -782,7 +1111,7 @@ espe2 = ggplot(df_especificidad, aes(x=Corte_1, y=Especificidad_2))+
   theme_bw()
 espe2
 ```
-Gráfica no. 11 (punto de corte ideal para maximizar la especificidad (vs Test) en modelo no 1.2)-
+Gráfica no. 18 (punto de corte ideal para maximizar la especificidad (vs Test) en modelo no 1.2)-
 
 
 - punto de corte ideal para maximizar la exactitud (vs Test)
@@ -790,7 +1119,7 @@ Gráfica no. 11 (punto de corte ideal para maximizar la especificidad (vs Test) 
 ```{r}
 
 prediccion_2 = predict(object = modelo_1_2,
-                    newdata = Test_intern_1, type = "response")
+                    newdata = Train_1, type = "response")
 
 Exactitud_2 <- vector()
 Corte_1 <- seq(0.05, 0.95, by = 0.001)
@@ -800,7 +1129,7 @@ for (i in 1:length(Corte_1)) {
   
   Exactitud_2[i] <- tryCatch(
     {
-      confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), Prediccion)$overall[1]
+      confusionMatrix(data = Prediccion, reference = as.factor(Train_1$Loan.Status))$overall[1]
     },
     error = function(e) {
       0 # O cualquier valor predeterminado
@@ -828,7 +1157,7 @@ exac2
 ```
 
 
-Gráfica no. 12 (punto de corte ideal para maximizar la exactitud (vs Test) en modelo no 1.2)-
+Gráfica no. 19 (punto de corte ideal para maximizar la exactitud (vs Test) en modelo no 1.2)-
 
 ```{r}
 corte_optimo_1 = which(Exactitud_2==max(Exactitud_2))
@@ -843,30 +1172,28 @@ Salida de consola y código no. 18 (Corte ótimo para máximizar la exactitud en
 ```{r}
 Prediccion_2<-as.factor(ifelse(prediccion_2>=Corte_1[corte_optimo_1][1],yes = 1, no = 0))
 
-confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), 
-                             Prediccion_2)
+confusionMatrix(data = Prediccion_2, reference = as.factor(Train_1$Loan.Status))
 
-cfmx2 = confusionMatrix(data = as.factor(Test_intern_1$Loan.Status), 
-                             Prediccion_2)
+cfmx2 = confusionMatrix(data = Prediccion_2, reference = as.factor(Train_1$Loan.Status))
 ```
-Salida de consola y código no. 19 (Matriz de confusión para el modelo no 1.3)-
+Salida de consola y código no. 24 (Matriz de confusión para el modelo no 1.3)-
 
 ```{r}
 mosaic(cfmx2$table, shade = T, colorize = T,
        gp = gpar(fill = matrix(c("green3", "red2", "red2", "green3"), 2, 2)),
        main = "Matriz de confusión (modelo 1.2)")
 ```
-Salida de consola y código no. 20 (Matriz de confusión ilustrada para el modelo no 1.2)-
+Salida de consola y código no. 25 (Matriz de confusión ilustrada para el modelo no 1.2)-
 
 ###### Curva ROC modelo 1.2
 
 ```{r}
 ##### Comparar modelo ya ajustado (no.1) con uno nuevo y muy simple
 Prediccion_2_roc<-predict(object = modelo_1_2,
-                    newdata = Test_intern_1, type = "response", 
+                    newdata = Train_1, type = "response", 
                     se.fit = T)
 
-predicciones_roc_2=prediction(Prediccion_2_roc$fit,Test_intern_1$Loan.Status)
+predicciones_roc_2=prediction(Prediccion_2_roc$fit,Train_1$Loan.Status)
 Desempeno_roc_2<-performance(predicciones_roc_2,'tpr','fpr')
 
 #ejecutar en conjunto
@@ -877,7 +1204,7 @@ legend(x=.7, y=.4, legend = c("Simple","Completo"),
       title = "Modelos")
 title("Curva ROC del modelo 1.2")
 ```
-Gráfica no. 13 (Curva ROC modelo 1.2)-
+Gráfica no. 20 (Curva ROC modelo 1.2)-
 
 
 
@@ -893,14 +1220,14 @@ for (i in seq_along(nombres_vars)) {
   cat(paste(nombres_vars[i], ": ", resumen$coefficients[i, "Estimate"], "\n"))
 }
 ```
-Salida de consola y código no. 21 (Coeficientes modelo no 1.2)-
+Salida de consola y código no. 26 (Coeficientes modelo no 1.2)-
 
 ###### Intervalos de confianza modelo 1.2
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 confint(object = modelo_1_2, level = 0.95)
 ```
-Salida de consola y código no. 22 (Intervalos de confianza para el modelo no 1.2)-
+Salida de consola y código no. 27 (Intervalos de confianza para el modelo no 1.2)-
 
 ######  ODDS Ratios del modelo no 1.2
 - Identificando los odds ratios 
@@ -915,49 +1242,8 @@ for (i in seq_along(nombres_vars)) {
   cat(paste(nombres_vars[i], ": ", exp(resumen$coefficients[i, "Estimate"]), "\n"))
 }
 ```
-Salida de consola y código no. 23 (Odds ratios para el modelo no 1.2)-
+Salida de consola y código no. 28 (Odds ratios para el modelo no 1.2)-
 
-######  Interpretación Odds ratios en el modelo no 1.2
-
-- Si la variable `Term` adopta el valor `Short`, este evento estara asociado con un aumento del 69% en las probabilidades del pago al corriente (`Fully Paid`) comparado con el evento cuando `Term` adopa el valor de `Long`.
-- Si la variable `Years.in.current.job` adopta el valor `1 year`, este evento estara asociado con un 29% en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Years.in.current.job` adopta el valor `10+ years`, este evento estara asociado con un 24.9% en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Years.in.current.job` adopta el valor `2 years`, este evento estara asociado con un 7% en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Years.in.current.job` adopta el valor `3 years`, este evento estara asociado con un 28.9% en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Years.in.current.job` adopta el valor `4 years`, este evento estara asociado con un 17.7 en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Years.in.current.job` adopta el valor `5 years`, este evento estara asociado con un 22.4% en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Years.in.current.job` adopta el valor `6 years`, este evento estara asociado con un 1% en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Years.in.current.job` adopta el valor `7 year`, este evento estara asociado con un 12.2% en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Years.in.current.job` adopta el valor `8 year`, este evento estara asociado con un 11% en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Years.in.current.job` adopta el valor `9 year`, este evento estara asociado con un 39% en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Years.in.current.job` adopta el valor `n/a`, este evento estara asociado con un 0% en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Purpose` adopta el `buy a car`, este evento estara asociado con un aumento del 265% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el `buy a house`, este evento estara asociado con un aumento del 44% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `debt consolidation`, este evento estara asociado con un aumento del 74% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `educational expenses`, este evento estara asociado con un aumento del 30% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `house improvement`, este evento estara asociado con un aumento del 116% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `major_purchase`, este evento estara asociado con un aumento del 15% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `medical bills`, este evento estara asociado con un aumento del 74% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `moving`, este evento estara asociado con un aumento del 20% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `other`, este evento estara asociado con un aumento del 81% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `renewable_energy`, este evento estara asociado con un aumento muy exagerado en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `small_business`, este evento estara asociado con una disminución del 58% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `take a trip`, este evento estara asociado con un aumento del 198% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `vacation`, este evento estara asociado con un aumento del 48% en las probabilidades del pago al corriente (`Fully Paid`)
-- Si la variable `Purpose` adopta el valor `wedding`, este evento estara asociado con una disminución del 3% en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Current.Loan.Amount` aumenta en 1,000,000 unidades, este evento estara asociado con un aumento del 0.77% en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Credit.Score` aumenta en 100 unidades, este evento estara asociado con una disminución del 13% en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Annual.Income` aumenta en 100,000 unidades, este evento estara asociado con un aumento del 32% en las probabilidades del pago al corriente (`Fully Paid`).
-- Si la variable `Monthly.Debt` aumenta en 10,000 unidades, este evento estara asociado con una disminución del 11.8% en las probabilidades del pago al corriente (`Fully Paid`).
-
-De lo que podemos concluir que las variables con mayor incidencia son:
-- la variable nominal `Purpose` con el valor `buy a car`.
-- la variable nominal `Purpose` con el valor `take a trip`.
-- la variable nominal `Purpose` con el valor `house improvements`.
-- la variable nominal `Purpose` con el valor `other`.
-- la variable nominal `Purpose` con el valor `medical bills`.
-- la variable nominal `Term` con el valor `Short`.
-- la variable nominal `Purpose` con el valor `small_business`.
 
 ###### Evaluación supuestos
 
@@ -976,7 +1262,7 @@ ggplot(datos_vif, aes(x = row.names(datos_vif), y = VIF.GVIF)) +
   theme_bw()
 ```
 
-Gráfica no. 14 (VIF modelo 1.2)-
+Gráfica no. 21 (VIF modelo 1.2)-
 
 - No existen problemas de multicolinealidad.
 - La variable de interés es de respuesta binaria.
@@ -997,11 +1283,10 @@ modelo.fun <- function(datos, subconjunto){
   Predicciones <- as.factor(ifelse(predicciones >= Corte_1[corte_optimo_1][1],
                                 yes = 1, no = 0))
   # Instanciamos la matriz de confusion para la variable de respuesta       (loan.status) con el vector de probabilidades llamado predicciones
-  cfmtx = confusionMatrix(data = as.factor(datos$Loan.Status), 
-                             Predicciones)
+  cfmtx = confusionMatrix(data = Predicciones, reference = as.factor(datos$Loan.Status))
   
   # Generamos un promedio de el porcentaje de aciertos general
-  class_prop = (cfmtx$table[1] + cfmtx$table[4]) / length(Train_intern_1$Loan.Status)
+  class_prop = (cfmtx$table[1] + cfmtx$table[4]) / length(Train_1$Loan.Status)
   
   
   # Regresamos dicho promedio
@@ -1009,16 +1294,16 @@ modelo.fun <- function(datos, subconjunto){
 }
 
 
-Bootstrap<-boot(data = Train_intern_1, 
+Bootstrap<-boot(data = Train_1, 
                 statistic = modelo.fun,## <- el parámetro 
                 #### statistic requiere una función que reciba dos 
                 #### parámetros: la muestra y los índices
-                R = 10000) #10mil muestras simuladas
+                R = 1000) #10mil muestras simuladas
 
 Bootstrap
 ```
 
-Salida de consola y código no. 24 (Bootstraping en el modelo no 1.2)-
+Salida de consola y código no. 29 (Bootstraping en el modelo no 1.2)-
 
 
 ```{r}
@@ -1034,35 +1319,37 @@ abline(v = mean(Bootstrap$t[,1]), col = "darkgreen", lwd = 2)
 text(x=.758, y=300, labels = glue("Promedio \n {round(mean, 4)}"))
 ```
 
-Gráfica no. 15 (Bootstraping en el modelo 1.2)-
+Gráfica no. 22 (Bootstraping en el modelo 1.2)-
 
 
-##### Comparación de remuestreos en los modelos 1.1 y
+##### Comparación de remuestreos en los modelos 1, 1.1 y 1.2
 
 ```{r}
-df <- data.frame(valor = c(bootstrap_vector_modelo_1_1, bootstrap_vector_modelo_1_2),
-                 grupo = factor(rep(c("Modelo 1.1", "Modelo 1.2"), each = length(bootstrap_vector_modelo_1_2))))
+df <- data.frame(valor = c(bootstrap_vector_modelo_1_0, bootstrap_vector_modelo_1_1, bootstrap_vector_modelo_1_2),
+                 grupo = factor(rep(c("Modelo 1", "Modelo 1.1", "Modelo 1.2"), each = length(bootstrap_vector_modelo_1_2))))
 
 medias <- tapply(df$valor, df$grupo, mean)
 
 gg_boots1 = ggplot(df, aes(x = valor, fill = grupo)) +
   geom_histogram(alpha = 0.6, position = "identity", bins = 100) +
-  scale_fill_manual(values = c("blue", "red")) +
+  #scale_fill_manual(values = c("blue", "red")) +
   labs(x = "Valor", y = "Frecuencia", fill = "Grupo")+
-  ggtitle("Comparación para cada modelo en el remuestreo (10k simulaciones)")+
-  geom_vline(xintercept = mean(bootstrap_vector_modelo_1_1), color = "blue")+
-  geom_vline(xintercept = mean(bootstrap_vector_modelo_1_2), color = "red")+
+  ggtitle("Comparación para cada modelo en el remuestreo (1k simulaciones)")+
+  geom_vline(xintercept = mean(bootstrap_vector_modelo_1_0), color = "blue")+
+  geom_vline(xintercept = mean(bootstrap_vector_modelo_1_1), color = "red")+
+  geom_vline(xintercept = mean(bootstrap_vector_modelo_1_2), color = "green")+
   theme_bw()
 gg_boots1
 ```
 Gráfica no. 16 (Compraración exactitud del modelo 1.1 y modelo 1.2)-
 
 ```{r}
-plot(Desempeno_roc_1,col="darkblue")
+plot(Desempeno_roc_1_0,col="orange")
+plot(Desempeno_roc_1,col="darkblue", add = T)
 plot(Desempeno_roc_2,col="darkgreen", add = T)
 plot(Desempeno1_prueba, col = "firebrick", add = T)
-legend(x=.7, y=.5, legend = c("Simple","Modelo 1.1", "Modelo 1.2"),
-      lwd = 2, col = c("red", "darkblue","darkgreen"),
+legend(x=.7, y=.5, legend = c("Simple", "Modelo 1", "Modelo 1.1", "Modelo 1.2"),
+      lwd = 2, col = c("black", "orange","darkblue","darkgreen"),
       title = "Modelos")
 title("Curvas ROC modelado 1")
 ```
@@ -1070,8 +1357,37 @@ Gráfica no. 17 (Compraración ROC del modelo 1.1 y modelo 1.2)-
 
 ##### Conclusiones Generales
 
-Con base en el estadístico de prueba (% total de aciertos) el mejor modelo a emplear en esta muestra de estudio, con base en el análisis de selección de variables, validación cruzada y remuestreo o bootstraping, resultaría ser el modelo 1.1. Aunque es de mencionar que las diferencias son minimas, por lo que es importante tomar en cuenta los resultados del EDA para la toma de esta desición.
+En las distintas pruebas estadísticas empleadas se pudo apreciar que los resultados fueron muy similares para los 3 modelos ajustados. El MSPR por k pliegues como la media estimada de aciertos en 1 mil simulaciones arrojaron estadísticos y estimaciones por decimales no identicas, por lo que la lógica y el sentido de negocio entra en juego para la toma de decisión de cuál es el mejor de los 3 modelos.
 
+
+
+Matriz de confusión Modelo 1
+          Reference
+Prediction     0     1
+         0  1806     4
+         1  5297 27102
+                       
+
+
+
+Matriz de confusión Modelo 1.1
+          Reference
+Prediction     0     1
+         0  1811     8
+         1  5292 27098
+
+
+
+Matriz de confusión Modelo 1.2
+          Reference
+Prediction     0     1
+         0  1810     6
+         1  5293 27100
+----------------------------
+
+Con el sentido de negocio que se juzga a criterio propio, caer en un falso positivo (clasificar como buen pagador a alguien que no lo es) sería más costoso que caer en un falso negativo (clasificar como mal pagador a un cliente que no lo es), por lo que se decide escoger el modelo que haya tenído el menor número de falsos negativos. Escogiendo al modelo 1.1 con 7 features.
+
+Con esta decisión concluímos en un modelo que tiene una exactitud del 84.5%, una precisión positiva (PPV o numero de verdaderos negativos sobre número de negativos) o propoción de aciertos en `Charged Off` del 99.77% y una presición negativa (PPN o número de verdaderos positivos sobre número de verdaderos) o proporción de aciertos en `Fully Paid` del 83.65%
 
 ##### Exportando modelo al directorio
 
@@ -1079,9 +1395,6 @@ Con base en el estadístico de prueba (% total de aciertos) el mejor modelo a em
 cfmx_modelo1 = cfmx1
 save(modelo_1_1, cfmx_modelo1, Corte_modelo_1_1, file = "../models/Modelo_1.RData")
 ```
-
-<!-- Se carga tal documento con -->
-<!-- load(file = "Ajuste Modelo.RData") -->
 
 
 

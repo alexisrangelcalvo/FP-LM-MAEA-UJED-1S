@@ -1,0 +1,11 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/1038441/1a1038851be94d6c81f1919af5371c94
+bundleId: https://api.rpubs.com/api/v1/document/1038441/1a1038851be94d6c81f1919af5371c94
+url: http://rpubs.com/alexisrangel/1038441
+when: 1683470080.86274
+lastSyncTime: 1683470080.86276

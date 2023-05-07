@@ -6,7 +6,7 @@ El orden del proyecto es el siguiente y se encuentran en las siguientes direccio
 
 1. Exploratory Data Analysis (../rmds/EDA_project.Rmd)
 2. Modelado 1 (./rmds/Modelo 1.Rmd)
-3. Modelado 2 (./rmds/Modelo 2.Rmd)
+3. Modelado 2 (./rmds/Modelo 2.Rmd) [DESACTUALIZADO Y EN PROCESO]
 4. Predicciones en el conjunto de datos 'Test' (./rmds/Predicciones.Rmd)
 5. Explanatory Model Analysis (../rmds/EMA.Rmd)
 6. Presentación ejecutiva del proyecto (./brief/Proyecto FInal.ppt)
