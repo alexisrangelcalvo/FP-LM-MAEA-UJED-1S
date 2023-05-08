@@ -37,6 +37,9 @@ Train_1 = read.csv("../datasets/muestra_completa.csv")
 
 ```{r, modif de datos, echo=FALSE}
 Train_1 = dplyr::select(Train_1, -c(ID))
+set.seed(123) # Establecer la semilla para obtener siempre la misma muestra aleatoria
+Train_intern_1 <- sample_frac(Train_1, 0.75)
+Test_intern_1 <- setdiff(Train_1, Train_intern_1)
 ```
 
 ```{r, echo=FALSE}
@@ -44,6 +47,18 @@ Train_1$Term = as.factor(Train_1$Term)
 Train_1$Years.in.current.job = as.factor(Train_1$Years.in.current.job)
 Train_1$Home.Ownership = as.factor(Train_1$Home.Ownership)
 Train_1$Purpose = as.factor(Train_1$Purpose)
+
+Train_intern_1$Term = as.factor(Train_intern_1$Term)
+Train_intern_1$Years.in.current.job = as.factor(Train_intern_1$Years.in.current.job)
+Train_intern_1$Home.Ownership = as.factor(Train_intern_1$Home.Ownership)
+Train_intern_1$Purpose = as.factor(Train_intern_1$Purpose)
+
+Test_intern_1$Term = as.factor(Test_intern_1$Term)
+Test_intern_1$Years.in.current.job = as.factor(Test_intern_1$Years.in.current.job)
+Test_intern_1$Home.Ownership = as.factor(Test_intern_1$Home.Ownership)
+Test_intern_1$Purpose = as.factor(Test_intern_1$Purpose)
+
+
 ```
 
 ### Modelo de regresión logística.
@@ -58,7 +73,7 @@ El presente ejercicio se plantea ajustar un modelo que tenga el mejor performanc
 - Visualizaciones del modelo de regresion logistica simple
 
 ```{r, echo=FALSE, message=FALSE}
-plot_lrm_1 = ggplot(Train_1, aes(x=Credit.Score, y=Loan.Status)) +
+plot_lrm_1 = ggplot(Train_intern_1, aes(x=Credit.Score, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -66,7 +81,7 @@ plot_lrm_1 = ggplot(Train_1, aes(x=Credit.Score, y=Loan.Status)) +
   ggtitle("Logit ~Credit.Score")+
   theme_bw()
 
-plot_lrm_2 = ggplot(Train_1, aes(x=Current.Loan.Amount, y=Loan.Status)) +
+plot_lrm_2 = ggplot(Train_intern_1, aes(x=Current.Loan.Amount, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -75,7 +90,7 @@ plot_lrm_2 = ggplot(Train_1, aes(x=Current.Loan.Amount, y=Loan.Status)) +
   ggtitle("Logit ~Current.Loan.Amount")+
   theme_bw()
 
-plot_lrm_3 = ggplot(Train_1, aes(x=Annual.Income, y=Loan.Status)) +
+plot_lrm_3 = ggplot(Train_intern_1, aes(x=Annual.Income, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -84,7 +99,7 @@ plot_lrm_3 = ggplot(Train_1, aes(x=Annual.Income, y=Loan.Status)) +
   ggtitle("Logit ~Annual.Income")+
   theme_bw()
 
-plot_lrm_4 = ggplot(Train_1, aes(x=Monthly.Debt, y=Loan.Status)) +
+plot_lrm_4 = ggplot(Train_intern_1, aes(x=Monthly.Debt, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -93,7 +108,7 @@ plot_lrm_4 = ggplot(Train_1, aes(x=Monthly.Debt, y=Loan.Status)) +
   ggtitle("Logit ~Monthly.Debt")+
   theme_bw()
 
-plot_lrm_5 = ggplot(Train_1, aes(x=Years.of.Credit.History, y=Loan.Status)) +
+plot_lrm_5 = ggplot(Train_intern_1, aes(x=Years.of.Credit.History, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -101,7 +116,7 @@ plot_lrm_5 = ggplot(Train_1, aes(x=Years.of.Credit.History, y=Loan.Status)) +
   ggtitle("Logit ~Years.of.Credit.History")+
   theme_bw()
 
-plot_lrm_6 = ggplot(Train_1, aes(x=Months.since.last.delinquent, y=Loan.Status)) +
+plot_lrm_6 = ggplot(Train_intern_1, aes(x=Months.since.last.delinquent, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -116,7 +131,7 @@ grid.arrange(plot_lrm_1, plot_lrm_2, plot_lrm_3, plot_lrm_4, plot_lrm_5, plot_lr
 ```
 
 ```{r, echo=FALSE, message=FALSE}
-plot_lrm_7 = ggplot(Train_1, aes(x=Number.of.Open.Accounts, y=Loan.Status)) +
+plot_lrm_7 = ggplot(Train_intern_1, aes(x=Number.of.Open.Accounts, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -124,7 +139,7 @@ plot_lrm_7 = ggplot(Train_1, aes(x=Number.of.Open.Accounts, y=Loan.Status)) +
   ggtitle("Logit ~Number.of.Open.Accounts")+
   theme_bw()
 
-plot_lrm_8 = ggplot(Train_1, aes(x=Current.Credit.Balance, y=Loan.Status)) +
+plot_lrm_8 = ggplot(Train_intern_1, aes(x=Current.Credit.Balance, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -133,7 +148,7 @@ plot_lrm_8 = ggplot(Train_1, aes(x=Current.Credit.Balance, y=Loan.Status)) +
   ggtitle("Logit ~Current.Credit.Balance")+
   theme_bw()
 
-plot_lrm_9 = ggplot(Train_1, aes(x=Maximum.Open.Credit, y=Loan.Status)) +
+plot_lrm_9 = ggplot(Train_intern_1, aes(x=Maximum.Open.Credit, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -142,7 +157,7 @@ plot_lrm_9 = ggplot(Train_1, aes(x=Maximum.Open.Credit, y=Loan.Status)) +
   ggtitle("Logit ~Maximum.Open.Credit")+
   theme_bw()
 
-plot_lrm_10 = ggplot(Train_1, aes(x=Bankruptcies, y=Loan.Status)) +
+plot_lrm_10 = ggplot(Train_intern_1, aes(x=Bankruptcies, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -150,7 +165,7 @@ plot_lrm_10 = ggplot(Train_1, aes(x=Bankruptcies, y=Loan.Status)) +
   ggtitle("Logit ~Bankruptcies")+
   theme_bw()
 
-plot_lrm_11 = ggplot(Train_1, aes(x=Tax.Liens, y=Loan.Status)) +
+plot_lrm_11 = ggplot(Train_intern_1, aes(x=Tax.Liens, y=Loan.Status)) +
   geom_jitter(height = .02, width = 0, alpha = 0.3) + 
   stat_smooth(method="glm", 
               method.args=list(family="binomial"), se=FALSE)+
@@ -172,7 +187,7 @@ rm(plot_lrm_1, plot_lrm_2, plot_lrm_3, plot_lrm_4, plot_lrm_5, plot_lrm_6, plot_
 
 ######  Ajuste del modelo no. 1
 ```{r}
-modelo_1 = glm(data = Train_1, 
+modelo_1 = glm(data = Train_intern_1, 
               formula = Loan.Status~., family = "binomial")
 summary(modelo_1)
 ```
@@ -180,7 +195,7 @@ Salida de consola y código no.1 (Ajuste del modelo no.1 )
 
 ######  Update del modelo con las variables estadísticamente significativas
 ```{r}
-modelo_1 = update(object = modelo_1, formula. = .~.-Home.Ownership -Number.of.Open.Accounts -Number.of.Credit.Problems -Current.Credit.Balance -Bankruptcies -Tax.Liens -Maximum.Open.Credit)
+modelo_1 = update(object = modelo_1, formula. = .~.-Home.Ownership -Number.of.Open.Accounts -Number.of.Credit.Problems -Current.Credit.Balance -Bankruptcies -Tax.Liens -Maximum.Open.Credit -Months.since.last.delinquent)
 summary(modelo_1)
 ```
 Salida de consola y código no.2 (Update al modelo no.1)
@@ -198,7 +213,7 @@ Salida de consola y código no.3 (ANOVA Modelo no. 1)
 glmulti.logistic.out <-
     glmulti(Loan.Status ~ Term + Years.in.current.job + Purpose + 
     Current.Loan.Amount + Credit.Score + Annual.Income + Monthly.Debt + 
-    Years.of.Credit.History + Months.since.last.delinquent, data = Train_1,
+    Years.of.Credit.History, data = Train_intern_1,
             level = 1,               # No interaction considered
             method = "h",            # Exhaustive approach
             crit = "aic",            # AIC as criteria
@@ -232,7 +247,7 @@ Elaborando modelos alternativos a `modelo_1`
 
 - Modelo 1.1
 ```{r}
-modelo_1_1 = glm(data = Train_1, 
+modelo_1_1 = glm(data = Train_intern_1, 
               formula = Loan.Status~ Term + Years.in.current.job + Purpose + Current.Loan.Amount + 
     Credit.Score + Annual.Income + Monthly.Debt + Years.of.Credit.History, family = "binomial")
 summary(modelo_1_1)
@@ -249,10 +264,9 @@ Salida de consola y código no.6 (ANOVA modelo no. 1.1)-
 - Modelo 1.2
 
 ```{r}
-modelo_1_2 = glm(data = Train_1, 
+modelo_1_2 = glm(data = Train_intern_1, 
               formula = Loan.Status~ Term + Purpose + Current.Loan.Amount + Credit.Score + 
-    Annual.Income + Monthly.Debt + Years.of.Credit.History + 
-    Months.since.last.delinquent, family = "binomial")
+    Annual.Income + Monthly.Debt + Years.of.Credit.History, family = "binomial")
 summary(modelo_1_2)
 ```
 El modelo 1.2 tiene un AIC de 26'647
@@ -266,7 +280,7 @@ Del modelo base y los dos modelos que derivan de este, que además presentan la 
 
 - Validación por k-fold para el modelo base
 ```{r, warning=FALSE}
-MSE_kf_1 = cv.glm(data = Train_1,
+MSE_kf_1 = cv.glm(data = Train_intern_1,
                glmfit = modelo_1, 
                K = 50)
 MSE_kf_1$delta
@@ -279,7 +293,7 @@ El primer valor representa el error medio cuadrático promedio para los K pliegu
 
 - Validación por k-fold para el modelo 1.1
 ```{r, warning=FALSE}
-MSE_kf_1_1 = cv.glm(data = Train_1,
+MSE_kf_1_1 = cv.glm(data = Train_intern_1,
             glmfit = modelo_1_1, K = 50)
 MSE_kf_1_1$delta
 ```
@@ -287,7 +301,7 @@ Salida de consola y código no.9 (MSE por K-Pliegues del modelo no. 1.1)-
 
 - Validación por k-fold para el modelo 1.2
 ```{r, warning=FALSE}
-MSE_kf_1_2 = cv.glm(data = Train_1,
+MSE_kf_1_2 = cv.glm(data = Train_intern_1,
             glmfit = modelo_1_2, K = 50)
 MSE_kf_1_2$delta
 ```
@@ -301,7 +315,7 @@ El MSPR y MSPR por corrección son practicamente los mismos, por los que requeri
 
 ```{r}
 prediccion_1_0 = predict(object = modelo_1,
-                    newdata = Train_1, type = "response")
+                    newdata = Test_intern_1, type = "response")
 df_prediccion_1_0 <- data.frame(preds = prediccion_1_0)
 
 dist_1_0 = ggplot(df_prediccion_1_0, aes(y="preds", x=prediccion_1_0))+
@@ -321,7 +335,7 @@ Gráfica no. 2 (Distribución de la predicción para el modelo no 1)-
 
 ```{r}
 prediccion_1_0 = predict(object = modelo_1,
-                    newdata = Train_1, type = "response")
+                    newdata = Test_intern_1, type = "response")
 
 Sensibilidad_1_0 <- vector()
 Corte_1_0 <- seq(0.05, 0.95, by = 0.001)
@@ -331,7 +345,7 @@ for (i in 1:length(Corte_1_0)) {
   
   Sensibilidad_1_0[i] <- tryCatch(
     {
-      confusionMatrix(data = Prediccion, reference = as.factor(Train_1$Loan.Status), 
+      confusionMatrix(data = Prediccion, reference = as.factor(Test_intern_1$Loan.Status), 
                              )$byClass[1]
     },
     error = function(e) {
@@ -362,7 +376,7 @@ Gráfica no. 3 (punto de corte ideal para maximizar la sensibilidad)-
 
 ```{r}
 prediccion_1_0 = predict(object = modelo_1,
-                    newdata = Train_1, type = "response")
+                    newdata = Test_intern_1, type = "response")
 
 Especificidad_1_0 <- vector()
 Corte_1_0 <- seq(0.05, 0.95, by = 0.001)
@@ -372,7 +386,7 @@ for (i in 1:length(Corte_1_0)) {
   
   Especificidad_1_0[i] <- tryCatch(
     {
-      confusionMatrix(data = Prediccion, reference = as.factor(Train_1$Loan.Status))$byClass[2]
+      confusionMatrix(data = Prediccion, reference = as.factor(Test_intern_1$Loan.Status))$byClass[2]
     },
     error = function(e) {
       0 # O cualquier valor predeterminado
@@ -405,7 +419,7 @@ Gráfica no. 4 (punto de corte ideal para maximizar la especificidad)-
 ```{r}
 
 prediccion_1_0 = predict(object = modelo_1,
-                    newdata = Train_1, type = "response")
+                    newdata = Test_intern_1, type = "response")
 
 Exactitud_1_0 <- vector()
 Corte_1_0 <- seq(0.05, 0.95, by = 0.001)
@@ -415,7 +429,7 @@ for (i in 1:length(Corte_1_0)) {
   
   Exactitud_1_0[i] <- tryCatch(
     {
-      confusionMatrix(data = Prediccion, reference = as.factor(Train_1$Loan.Status))$overall[1]
+      confusionMatrix(data = Prediccion, reference = as.factor(Test_intern_1$Loan.Status))$overall[1]
     },
     error = function(e) {
       0 # O cualquier valor predeterminado
@@ -451,14 +465,15 @@ Salida de consola y código no. 11 (Corte óptimo para máximizar la exactitud e
 
 ###### Matriz de confusión para el modelo 1
 
-
 ```{r}
 Prediccion_1_0<-as.factor(ifelse(prediccion_1_0>=Corte_1_0[corte_optimo_1_0][1],yes = 1, no = 0))
 
-confusionMatrix(data = Prediccion_1_0, reference = as.factor(Train_1$Loan.Status))
+confusionMatrix(data = Prediccion_1_0, reference = as.factor(Test_intern_1$Loan.Status))
 
-cfmx1_0 = confusionMatrix(data = Prediccion_1_0, reference = as.factor(Train_1$Loan.Status))
+cfmx1_0 = confusionMatrix(data = Prediccion_1_0, reference = as.factor(Test_intern_1$Loan.Status))
 ```
+
+
 Salida de consola y código no. 12 (Matriz de confusión para el modelo no 1)-
 
 ```{r}
@@ -473,21 +488,21 @@ Salida de consola y código no. 13 (Matriz de confusión ilustrada para el model
 ```{r}
 ##### Comparar modelo ya ajustado (no.1) con uno nuevo y muy simple
 Prediccion_1_0_roc<-predict(object = modelo_1,
-                    newdata = Train_1, type = "response", 
+                    newdata = Test_intern_1, type = "response", 
                     se.fit = T)
 
-predicciones_roc_1_0=prediction(Prediccion_1_0_roc$fit,Train_1$Loan.Status)
+predicciones_roc_1_0=prediction(Prediccion_1_0_roc$fit,Test_intern_1$Loan.Status)
 Desempeno_roc_1_0<-performance(predicciones_roc_1_0,'tpr','fpr')
 
 ## Cgenerando nuevo modelo simple
-modelo_simple_prueba <- glm(data = Train_1, 
+modelo_simple_prueba <- glm(data = Train_intern_1, 
               formula = Loan.Status~Purpose+Bankruptcies, family = "binomial")
 
 Prediccion_1_prueba<-predict(object = modelo_simple_prueba,
-                    newdata = Train_1, type = "response", 
+                    newdata = Test_intern_1, type = "response", 
                     se.fit = T)
 
-predicciones1_prueba<-prediction(Prediccion_1_prueba$fit,Train_1$Loan.Status)
+predicciones1_prueba<-prediction(Prediccion_1_prueba$fit,Test_intern_1$Loan.Status)
 Desempeno1_prueba<-performance(predicciones1_prueba,'tpr','fpr')
 
 #ejecutar en conjunto
@@ -598,7 +613,7 @@ Empleamos como estadístico a evalua el % de aciertos (suma de verdaderos positi
 
 ```{r}
 modelo.fun <- function(datos, subconjunto){
-  #Generamos un vector de Predicción para la probabilidad de fully charged (1) para un nuevo vector random [llamado predicciones]
+  #Generamos un vector de Predicción para la probabilidad de fully charged (1) para un nuevo vector random [llamado predicciones], donde predeciremos con el modelo ajustado en Train_intern_1, y la nueva información nunca antes vista por el modelo vendra de Test_intern_1
   predicciones<-predict(modelo_1, newdata = datos[subconjunto,])
   #Con dicho vector [predicciones], separar por clases para fully paid (1) y charged off(0) para generar el nuevo vector [Prediccion]
   Predicciones <- as.factor(ifelse(predicciones >= Corte_1_0[corte_optimo_1_0][1],
@@ -607,7 +622,7 @@ modelo.fun <- function(datos, subconjunto){
   cfmtx = confusionMatrix(data = Predicciones, reference = as.factor(datos$Loan.Status))
   
   # Generamos un promedio de el porcentaje de aciertos general
-  class_prop = (cfmtx$table[1] + cfmtx$table[4]) / length(Train_1$Loan.Status)
+  class_prop = (cfmtx$table[1] + cfmtx$table[4]) / length(datos$Loan.Status)
   
   
   # Regresamos dicho promedio
@@ -615,11 +630,11 @@ modelo.fun <- function(datos, subconjunto){
 }
 
 
-Bootstrap<-boot(data = Train_1, 
+Bootstrap<-boot(data = Test_intern_1, 
                 statistic = modelo.fun,## <- el parámetro 
                 #### statistic requiere una función que reciba dos 
                 #### parámetros: la muestra y los índices
-                R = 1000) #10mil muestras simuladas
+                R = 10000) #10mil muestras simuladas
 
 Bootstrap
 ```
@@ -637,7 +652,7 @@ hist(Bootstrap$t[,1], breaks = 100,
      ylab = "Frecuencia")
 abline(v = quantile(x = Bootstrap$t[,1], c(.025,.975)),col = "red")
 abline(v = mean(Bootstrap$t[,1]), col = "darkgreen", lwd = 2)
-text(x=.758, y=300, labels = glue("Promedio \n{round(mean, 4)}"))
+text(x=.745, y=200, labels = glue("Promedio \n{round(mean, 4)}"))
 ```
 
 Gráfica no. 8 (Bootstraping en el modelo 1)-
@@ -649,7 +664,7 @@ Gráfica no. 8 (Bootstraping en el modelo 1)-
 
 ```{r}
 prediccion_1 = predict(object = modelo_1_1,
-                    newdata = Train_1, type = "response")
+                    newdata = Test_intern_1, type = "response")
 df_prediccion_1 <- data.frame(preds = prediccion_1)
 
 dist_1 = ggplot(df_prediccion_1, aes(y="preds", x=prediccion_1))+
@@ -670,7 +685,7 @@ Gráfica no. 9 (Distribución de la predicción para el modelo no 1.1)-
 
 ```{r}
 prediccion_1 = predict(object = modelo_1_1,
-                    newdata = Train_1, type = "response")
+                    newdata = Test_intern_1, type = "response")
 
 Sensibilidad_1 <- vector()
 Corte_1 <- seq(0.05, 0.95, by = 0.001)
@@ -680,7 +695,7 @@ for (i in 1:length(Corte_1)) {
   
   Sensibilidad_1[i] <- tryCatch(
     {
-      confusionMatrix(data = Prediccion, reference = as.factor(Train_1$Loan.Status), 
+      confusionMatrix(data = Prediccion, reference = as.factor(Test_intern_1$Loan.Status), 
                              )$byClass[1]
     },
     error = function(e) {
@@ -712,7 +727,7 @@ Gráfica no. 10 (punto de corte ideal para maximizar la sensibilidad)-
 
 ```{r}
 prediccion_1 = predict(object = modelo_1_1,
-                    newdata = Train_1, type = "response")
+                    newdata = Test_intern_1, type = "response")
 
 Especificidad_1 <- vector()
 Corte_1 <- seq(0.05, 0.95, by = 0.001)
@@ -722,7 +737,7 @@ for (i in 1:length(Corte_1)) {
   
   Especificidad_1[i] <- tryCatch(
     {
-      confusionMatrix(data = Prediccion, reference = as.factor(Train_1$Loan.Status))$byClass[2]
+      confusionMatrix(data = Prediccion, reference = as.factor(Test_intern_1$Loan.Status))$byClass[2]
     },
     error = function(e) {
       0 # O cualquier valor predeterminado
@@ -755,7 +770,7 @@ Gráfica no. 11 (punto de corte ideal para maximizar la especificidad)-
 ```{r}
 
 prediccion_1 = predict(object = modelo_1_1,
-                    newdata = Train_1, type = "response")
+                    newdata = Test_intern_1, type = "response")
 
 Exactitud_1 <- vector()
 Corte_1 <- seq(0.05, 0.95, by = 0.001)
@@ -765,7 +780,7 @@ for (i in 1:length(Corte_1)) {
   
   Exactitud_1[i] <- tryCatch(
     {
-      confusionMatrix(data = Prediccion, reference = as.factor(Train_1$Loan.Status))$overall[1]
+      confusionMatrix(data = Prediccion, reference = as.factor(Test_intern_1$Loan.Status))$overall[1]
     },
     error = function(e) {
       0 # O cualquier valor predeterminado
@@ -808,11 +823,10 @@ Salida de consola y código no. 18 (Corte óptimo para máximizar la exactitud)-
 ```{r}
 Prediccion_1<-as.factor(ifelse(prediccion_1>=Corte_1[corte_optimo_1][1],yes = 1, no = 0))
 
-confusionMatrix(data = Prediccion_1, reference = as.factor(Train_1$Loan.Status))
+confusionMatrix(data = Prediccion_1, reference = as.factor(Test_intern_1$Loan.Status))
 
-cfmx1 = confusionMatrix(data = Prediccion_1, reference = as.factor(Train_1$Loan.Status))
+cfmx1 = confusionMatrix(data = Prediccion_1, reference = as.factor(Test_intern_1$Loan.Status))
 ```
-
 
 
 Salida de consola y código no. 19 (Matriz de confusión para el modelo no 1.1)-
@@ -829,10 +843,10 @@ Salida de consola y código no. 13 (Matriz de confusión ilustrada para el model
 ```{r}
 ##### Comparar modelo ya ajustado (no.1) con uno nuevo y muy simple
 Prediccion_1_roc<-predict(object = modelo_1_1,
-                    newdata = Train_1, type = "response", 
+                    newdata = Test_intern_1, type = "response", 
                     se.fit = T)
 
-predicciones_roc_1=prediction(Prediccion_1_roc$fit,Train_1$Loan.Status)
+predicciones_roc_1=prediction(Prediccion_1_roc$fit,Test_intern_1$Loan.Status)
 Desempeno_roc_1<-performance(predicciones_roc_1,'tpr','fpr')
 
 #ejecutar en conjunto
@@ -958,7 +972,7 @@ Empleamos como estadístico a evalua el % de aciertos (suma de verdaderos positi
 
 ```{r}
 modelo.fun <- function(datos, subconjunto){
-  #Generamos un vector de Predicción para la probabilidad de fully charged (1) para un nuevo vector random [llamado predicciones]
+  #Generamos un vector de Predicción para la probabilidad de fully charged (1) para un nuevo vector random [llamado predicciones], donde predeciremos con el modelo ajustado en Train_intern_1, y la nueva información nunca antes vista por el modelo vendra de Test_intern_1
   predicciones<-predict(modelo_1_1, newdata = datos[subconjunto,])
   #Con dicho vector [predicciones], separar por clases para fully paid (1) y charged off(0) para generar el nuevo vector [Prediccion]
   Predicciones <- as.factor(ifelse(predicciones >= Corte_1[corte_optimo_1][1],
@@ -967,7 +981,7 @@ modelo.fun <- function(datos, subconjunto){
   cfmtx = confusionMatrix(data = Predicciones, reference = as.factor(datos$Loan.Status))
   
   # Generamos un promedio de el porcentaje de aciertos general
-  class_prop = (cfmtx$table[1] + cfmtx$table[4]) / length(Train_1$Loan.Status)
+  class_prop = (cfmtx$table[1] + cfmtx$table[4]) / length(datos$Loan.Status)
   
   
   # Regresamos dicho promedio
@@ -975,11 +989,11 @@ modelo.fun <- function(datos, subconjunto){
 }
 
 
-Bootstrap<-boot(data = Train_1, 
+Bootstrap<-boot(data = Test_intern_1, 
                 statistic = modelo.fun,## <- el parámetro 
                 #### statistic requiere una función que reciba dos 
                 #### parámetros: la muestra y los índices
-                R = 1000) #10mil muestras simuladas
+                R = 10000) #10mil muestras simuladas
 
 Bootstrap
 ```
@@ -997,7 +1011,7 @@ hist(Bootstrap$t[,1], breaks = 100,
      ylab = "Frecuencia")
 abline(v = quantile(x = Bootstrap$t[,1], c(.025,.975)),col = "red")
 abline(v = mean(Bootstrap$t[,1]), col = "darkgreen", lwd = 2)
-text(x=.758, y=300, labels = glue("Promedio \n{round(mean, 4)}"))
+text(x=.745, y=200, labels = glue("Promedio \n{round(mean, 4)}"))
 ```
 
 Gráfica no. 16 (Bootstraping en el modelo 1.1)-
@@ -1008,7 +1022,7 @@ Gráfica no. 16 (Bootstraping en el modelo 1.1)-
 
 ```{r}
 prediccion_2 = predict(object = modelo_1_2,
-                    newdata = Train_1, type = "response")
+                    newdata = Test_intern_1, type = "response")
 df_prediccion_2 <- data.frame(preds = prediccion_2)
 
 dist2 = ggplot(df_prediccion_2, aes(y="preds", x=prediccion_2))+
@@ -1029,7 +1043,7 @@ Gráfica no. 16 (Distribución de la predicción para el modelo no 1.3)-
 
 ```{r}
 prediccion_2 = predict(object = modelo_1_2,
-                    newdata = Train_1, type = "response")
+                    newdata = Test_intern_1, type = "response")
 
 Sensibilidad_2 <- vector()
 Corte_1 <- seq(0.05, 0.95, by = 0.001)
@@ -1039,15 +1053,13 @@ for (i in 1:length(Corte_1)) {
   
   Sensibilidad_2[i] <- tryCatch(
     {
-      confusionMatrix(data = Prediccion, reference = as.factor(Train_1$Loan.Status))$byClass[1]
+      confusionMatrix(data = Prediccion, reference = as.factor(Test_intern_1$Loan.Status))$byClass[1]
     },
     error = function(e) {
       0 # O cualquier valor predeterminado
     }
   )
 }
-
-# plot(x=Corte_1, y = Sensibilidad_2, type = "l", main ="Punto de corte óptimo para maximizar la sensibilidad (vs Test)", xlab="Corte", ylab="Exactitud")
 ```
 
 ```{r}
@@ -1074,7 +1086,7 @@ Gráfica no. 17 (punto de corte ideal para maximizar la sensibilidad (vs Test) e
 
 ```{r}
 prediccion_2 = predict(object = modelo_1_2,
-                    newdata = Train_1, type = "response")
+                    newdata = Test_intern_1, type = "response")
 
 Especificidad_2 <- vector()
 Corte_1 <- seq(0.05, 0.95, by = 0.001)
@@ -1085,7 +1097,7 @@ for (i in 1:length(Corte_1)) {
   Especificidad_2[i] <- tryCatch(
     {
       # confusionMatrix(reference = as.factor(Test_intern_1$Loan.Status), Prediccion)$overall[1]
-      confusionMatrix(data = Prediccion, reference = as.factor(Train_1$Loan.Status))$byClass[2]
+      confusionMatrix(data = Prediccion, reference = as.factor(Test_intern_1$Loan.Status))$byClass[2]
     },
     error = function(e) {
       0 # O cualquier valor predeterminado
@@ -1093,7 +1105,6 @@ for (i in 1:length(Corte_1)) {
   )
 }
 
-# plot(x=Corte_1, y = Especificidad_2, type = "l", main ="Punto de corte óptimo para maximizar la especificidad (vs Test)", xlab="Corte", ylab="Exactitud")
 ```
 
 ```{r}
@@ -1119,7 +1130,7 @@ Gráfica no. 18 (punto de corte ideal para maximizar la especificidad (vs Test) 
 ```{r}
 
 prediccion_2 = predict(object = modelo_1_2,
-                    newdata = Train_1, type = "response")
+                    newdata = Test_intern_1, type = "response")
 
 Exactitud_2 <- vector()
 Corte_1 <- seq(0.05, 0.95, by = 0.001)
@@ -1129,15 +1140,13 @@ for (i in 1:length(Corte_1)) {
   
   Exactitud_2[i] <- tryCatch(
     {
-      confusionMatrix(data = Prediccion, reference = as.factor(Train_1$Loan.Status))$overall[1]
+      confusionMatrix(data = Prediccion, reference = as.factor(Test_intern_1$Loan.Status))$overall[1]
     },
     error = function(e) {
       0 # O cualquier valor predeterminado
     }
   )
 }
-
-# plot(x=Corte_1, y = Exactitud_2, type = "l", main ="Punto de corte óptimo para maximizar la exactitud (vs Test)", xlab="Corte", ylab="Exactitud")
 ```
 
 ```{r}
@@ -1172,10 +1181,12 @@ Salida de consola y código no. 18 (Corte ótimo para máximizar la exactitud en
 ```{r}
 Prediccion_2<-as.factor(ifelse(prediccion_2>=Corte_1[corte_optimo_1][1],yes = 1, no = 0))
 
-confusionMatrix(data = Prediccion_2, reference = as.factor(Train_1$Loan.Status))
+confusionMatrix(data = Prediccion_2, reference = as.factor(Test_intern_1$Loan.Status))
 
-cfmx2 = confusionMatrix(data = Prediccion_2, reference = as.factor(Train_1$Loan.Status))
+cfmx2 = confusionMatrix(data = Prediccion_2, reference = as.factor(Test_intern_1$Loan.Status))
 ```
+
+
 Salida de consola y código no. 24 (Matriz de confusión para el modelo no 1.3)-
 
 ```{r}
@@ -1190,10 +1201,10 @@ Salida de consola y código no. 25 (Matriz de confusión ilustrada para el model
 ```{r}
 ##### Comparar modelo ya ajustado (no.1) con uno nuevo y muy simple
 Prediccion_2_roc<-predict(object = modelo_1_2,
-                    newdata = Train_1, type = "response", 
+                    newdata = Test_intern_1, type = "response", 
                     se.fit = T)
 
-predicciones_roc_2=prediction(Prediccion_2_roc$fit,Train_1$Loan.Status)
+predicciones_roc_2=prediction(Prediccion_2_roc$fit,Test_intern_1$Loan.Status)
 Desempeno_roc_2<-performance(predicciones_roc_2,'tpr','fpr')
 
 #ejecutar en conjunto
@@ -1286,7 +1297,7 @@ modelo.fun <- function(datos, subconjunto){
   cfmtx = confusionMatrix(data = Predicciones, reference = as.factor(datos$Loan.Status))
   
   # Generamos un promedio de el porcentaje de aciertos general
-  class_prop = (cfmtx$table[1] + cfmtx$table[4]) / length(Train_1$Loan.Status)
+  class_prop = (cfmtx$table[1] + cfmtx$table[4]) / length(datos$Loan.Status)
   
   
   # Regresamos dicho promedio
@@ -1294,11 +1305,11 @@ modelo.fun <- function(datos, subconjunto){
 }
 
 
-Bootstrap<-boot(data = Train_1, 
+Bootstrap<-boot(data = Test_intern_1, 
                 statistic = modelo.fun,## <- el parámetro 
                 #### statistic requiere una función que reciba dos 
                 #### parámetros: la muestra y los índices
-                R = 1000) #10mil muestras simuladas
+                R = 10000) #10mil muestras simuladas
 
 Bootstrap
 ```
@@ -1316,7 +1327,7 @@ hist(Bootstrap$t[,1], breaks = 100,
      ylab = "Frecuencia")
 abline(v = quantile(x = Bootstrap$t[,1], c(.025,.975)),col = "red")
 abline(v = mean(Bootstrap$t[,1]), col = "darkgreen", lwd = 2)
-text(x=.758, y=300, labels = glue("Promedio \n {round(mean, 4)}"))
+text(x=.745, y=300, labels = glue("Promedio \n {round(mean, 4)}"))
 ```
 
 Gráfica no. 22 (Bootstraping en el modelo 1.2)-
@@ -1334,7 +1345,7 @@ gg_boots1 = ggplot(df, aes(x = valor, fill = grupo)) +
   geom_histogram(alpha = 0.6, position = "identity", bins = 100) +
   #scale_fill_manual(values = c("blue", "red")) +
   labs(x = "Valor", y = "Frecuencia", fill = "Grupo")+
-  ggtitle("Comparación para cada modelo en el remuestreo (1k simulaciones)")+
+  ggtitle("Comparación para cada modelo en el remuestreo (10k simulaciones)")+
   geom_vline(xintercept = mean(bootstrap_vector_modelo_1_0), color = "blue")+
   geom_vline(xintercept = mean(bootstrap_vector_modelo_1_1), color = "red")+
   geom_vline(xintercept = mean(bootstrap_vector_modelo_1_2), color = "green")+
@@ -1357,32 +1368,8 @@ Gráfica no. 17 (Compraración ROC del modelo 1.1 y modelo 1.2)-
 
 ##### Conclusiones Generales
 
-En las distintas pruebas estadísticas empleadas se pudo apreciar que los resultados fueron muy similares para los 3 modelos ajustados. El MSPR por k pliegues como la media estimada de aciertos en 1 mil simulaciones arrojaron estadísticos y estimaciones por decimales no identicas, por lo que la lógica y el sentido de negocio entra en juego para la toma de decisión de cuál es el mejor de los 3 modelos.
+En las distintas pruebas estadísticas empleadas se pudo apreciar que los resultados fueron muy similares para los 3 modelos ajustados. El MSPR por k pliegues como la media estimada de aciertos en 10 mil simulaciones arrojaron estadísticos y estimaciones por decimales no identicas, por lo que la lógica y el sentido de negocio entra en juego para la toma de decisión de cuál es el mejor de los 3 modelos.
 
-
-
-Matriz de confusión Modelo 1
-          Reference
-Prediction     0     1
-         0  1806     4
-         1  5297 27102
-                       
-
-
-
-Matriz de confusión Modelo 1.1
-          Reference
-Prediction     0     1
-         0  1811     8
-         1  5292 27098
-
-
-
-Matriz de confusión Modelo 1.2
-          Reference
-Prediction     0     1
-         0  1810     6
-         1  5293 27100
 ----------------------------
 
 Con el sentido de negocio que se juzga a criterio propio, caer en un falso positivo (clasificar como buen pagador a alguien que no lo es) sería más costoso que caer en un falso negativo (clasificar como mal pagador a un cliente que no lo es), por lo que se decide escoger el modelo que haya tenído el menor número de falsos negativos. Escogiendo al modelo 1.1 con 7 features.
